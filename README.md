@@ -6,9 +6,10 @@ A reference guide for Python.
 
   <summary><strong>Projects</strong></summary>
 
-| Num | Name           | Branch              |
-| --: | :------------- | :------------------ |
-|   1 | Hello World UV | 0000-hello-world-uv |
+| Num | Name                  | Branch                    | Summary                                                                                                                  | Status |
+| --: | :-------------------- | :------------------------ | :----------------------------------------------------------------------------------------------------------------------- | :----- |
+|   1 | Hello World UV        | 0000-hello-world-uv       |                                                                                                                          | WIP    |
+|   2 | OpenCV Video Splitter | 0001-openv-video-splitter | Use OpenCV to read video data, detect common patterns between each sections, and split the video into multiple sections. | Idea      |
 
 </details>
 
@@ -106,13 +107,14 @@ typeCheckingMode = "standard"
   uv python pin <python-version>
   ```
 
-- To create vitual environment, run below command. This will create a folder named `.venv`. ***Optional, uv will auto create virtual environment when adding packages***
+- To create vitual environment, run below command. This will create a folder named `.venv`. **_Optional, uv will auto create virtual environment when adding packages_**
 
   ```powershell
   uv venv
   ```
 
 - Updated project folder structure after running `uv venv`.
+
   ```
   <project-name>
   ├── .venv
