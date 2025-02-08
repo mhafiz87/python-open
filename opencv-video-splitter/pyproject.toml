@@ -1,0 +1,42 @@
+[project]
+name = "opencv-video-splitter"
+version = "0.0.1"
+description = "To split vidoes into multiple segments based on a common pattern."
+readme = "README.md"
+requires-python = ">=3.13"
+keywords = []
+authors = [
+  { name = "Muhammad Hafiz bin Muhamad", email = "mhafiz.muhamad@gmail.com" }
+]
+classifiers = [
+  "Private :: Do not Upload",
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3.13",
+]
+
+# [project.scripts]
+
+# [project.urls]
+
+dependencies = [
+    "imagehash>=4.3.2",
+    "opencv-python>=4.11.0.86",
+    "pillow>=11.1.0",
+]
+
+[dependency-groups]
+dev = [
+    "basedpyright>=1.26.0",
+    "pytest>=8.3.4",
+]
+
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"
+
+[tool.basedpyright]
+reportOptionalMemberAccess = "none"
+typeCheckingMode = "standard"
+
