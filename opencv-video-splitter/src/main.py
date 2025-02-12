@@ -167,9 +167,9 @@ def main(split_mark) -> None:
         f"{'Total main time': <20}: {str(timedelta(seconds=(time.time() - start_time)))}"
     )
     print(f"{'marks': <20}: {marks}")
-    marks_datetime = [datetime.strptime(item, "%H:%M:%S") for item in marks].sort()
+    marks_datetime = [datetime.strptime(item, "%H:%M:%S") for item in marks]
+    marks_datetime.sort()
     print(f"{'marks_datetime': <20}: {marks_datetime}")
-    print()
     marks_sorted = [datetime.strftime(item, "%H:%M:%S") for item in marks_datetime]
     print(f"{'marks_sorted': <20}: {marks_sorted}")
 
