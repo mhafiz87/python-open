@@ -26,7 +26,6 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "basedpyright>=1.26.0",
     "pytest>=8.3.4",
 ]
 
