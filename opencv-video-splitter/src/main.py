@@ -1,20 +1,46 @@
 import concurrent.futures
 import multiprocessing
+import sys
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
+from pprint import pprint
 
 import cv2
+import ffmpeg
 import imagehash
 from PIL import Image
 
-HAMMING_THRESHOLD = 5
-VIDEO_PATH = Path(__file__).parent.joinpath("data", "video.mkv")
-REF_IMG_PATH = Path(__file__).parent.joinpath("data", "ref.png")
-STEPS = 15
+video_extensions = ["mkv", "mp4"]
+print(f"{'Current working directory': <20}: {Path.cwd()}")
+detected_videos = [Path.cwd().glob(f"*.{ext}") for ext in video_extensions]
+video_list = [str(item) for videos in detected_videos for item in videos]
+# List comprehension for below 3 lines
+# for videos in detected_videos:
+#     for item in videos:
+#         video_list.append(str(item))
+print(f"{'Detected video in current folder': <20}:")
+print(f"\n".join(video_list))
+if not video_list:
+    print("No video detected in current folder.")
+    sys.exit()
+VIDEO_PATH = video_list[0]
+if len(video_list) > 1:
+    print(f"Multiple videos detected. Use the first detected video. {VIDEO_PATH}")
+VIDEO_LENGTH: str = ffmpeg.probe(str(VIDEO_PATH))["streams"][0]["tags"][
+    "DURATION"
+].split(".")[0]
+print(f"{'Video length': <20}: {VIDEO_LENGTH}")
 
-if not VIDEO_PATH.is_file():
-    raise FileExistsError(f"{VIDEO_PATH} does not exist !!!")
+HAMMING_THRESHOLD = 5
+REF_IMG_PATH = Path.cwd().joinpath("ref.png")
+if not REF_IMG_PATH.is_file():
+    raise FileNotFoundError(f"Unable to find '{REF_IMG_PATH}'!!!")
+STEPS = 15
+print(f"Using '{str(REF_IMG_PATH)}' as reference image to split video.")
+OUTPUT_FOLDER = Path.cwd().joinpath("split-video")
+if not OUTPUT_FOLDER.is_dir():
+    OUTPUT_FOLDER.mkdir(parents=True, exist_ok=True)
 
 
 def temp() -> None:
@@ -137,15 +163,15 @@ def get_command_details(split_mark: int) -> list:
     return commands
 
 
-def main(split_mark) -> None:
+def get_marks(split_mark: int) -> list[str]:
     print(f"{'Number of CPU cores': <20}: {multiprocessing.cpu_count()}")
     max_processes = multiprocessing.cpu_count() - 2
-    marks: list[list[int]] = []
+    marks: list[str] = []
     start_time = time.time()
     with concurrent.futures.ProcessPoolExecutor(max_workers=max_processes) as executor:
         futures = [
             executor.submit(*item)
-            for item in get_command_details(split_mark=split_mark)[:4]
+            for item in get_command_details(split_mark=split_mark)
         ]
         # Leave code below as an example
         # futures.append(
@@ -172,7 +198,90 @@ def main(split_mark) -> None:
     print(f"{'marks_datetime': <20}: {marks_datetime}")
     marks_sorted = [datetime.strftime(item, "%H:%M:%S") for item in marks_datetime]
     print(f"{'marks_sorted': <20}: {marks_sorted}")
+    marks = marks_sorted.copy()
+    marks.insert(0, "00:00:00")
+    if len(marks) % 2 != 0:
+        marks.append(VIDEO_LENGTH)
+    print(f"{'Num of marks': <20}: {len(marks)}")
+    print(f"{'Marks': <20}: {marks}")
+    return marks
+
+
+def _split_video(video: str, start_time: str, end_time: str, output: str) -> None:
+    ffmpeg.input(filename=video, ss=start_time, to=end_time).output(
+        output, vcodec="copy", acodec="copy"
+    ).run()
+
+
+def multi_split(marks: list[str]) -> None:
+    for index in range(0, len(marks), 2):
+        _split_video(
+            video=VIDEO_PATH,
+            start_time=marks[index],
+            end_time=marks[index + 1],
+            output=f"output-{index}.mkv",
+        )
+
+
+def main() -> None:
+    pass
 
 
 if __name__ == "__main__":
-    main(split_mark=2)
+    pass
+    # get_marks(split_mark=10)
+    # split_video(
+    #     video=VIDEO_PATH,
+    #     start_time="03:19:00",
+    #     end_time=None,
+    #     output=str(Path(__file__).parent.joinpath("output", "output.mkv")),
+    # )
+    test_mark = [
+        "00:00:00",
+        "00:07:13",
+        "00:07:14",
+        "00:13:13",
+        "00:13:13",
+        "00:18:21",
+        "00:18:21",
+        "00:24:35",
+        "00:24:35",
+        "00:28:50",
+        "00:28:50",
+        "00:36:50",
+        "00:36:51",
+        "00:40:48",
+        "00:40:49",
+        "00:44:11",
+        "00:44:11",
+        "00:50:53",
+        "00:50:54",
+        "00:55:07",
+        "00:55:07",
+        "01:00:56",
+        "01:00:57",
+        "01:09:29",
+        "01:09:29",
+        "01:12:10",
+        "01:12:11",
+        "01:19:44",
+        "01:19:44",
+        "01:26:35",
+        "01:26:35",
+        "01:31:43",
+        "01:31:45",
+        "01:39:09",
+        "01:39:09",
+        "01:46:44",
+        "01:46:45",
+        "01:50:49",
+        "01:50:49",
+        "01:54:52",
+        "01:55:01",
+        "01:55:31",
+        "01:55:33",
+        "02:00:22",
+        "02:00:25",
+        "02:15:00",
+    ]
+    # multi_split(marks=temp)

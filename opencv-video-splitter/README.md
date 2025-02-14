@@ -5,7 +5,7 @@
 - CLI to split video
 
 ```powershell
-https://superuser.com/questions/140899/ffmpeg-splitting-mp4-with-same-quality
+ffmpeg -i largefile.mp4 -t 00:50:00 -c copy smallfile1.mp4 -ss 00:50:00 -c copy smallfile2.mp4
 ```
 
 ## References

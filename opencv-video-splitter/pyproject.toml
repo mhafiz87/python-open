@@ -14,15 +14,18 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
 ]
 
-# [project.scripts]
-
-# [project.urls]
-
 dependencies = [
+    "ffmpeg-python>=0.2.0",
     "imagehash>=4.3.2",
     "opencv-python>=4.11.0.86",
     "pillow>=11.1.0",
 ]
+
+[project.scripts]
+split-video = "main:main"
+
+# [project.urls]
+
 
 [dependency-groups]
 dev = [
@@ -39,3 +42,5 @@ profile = "black"
 reportOptionalMemberAccess = "none"
 typeCheckingMode = "standard"
 
+[tool.uv]
+package = true
