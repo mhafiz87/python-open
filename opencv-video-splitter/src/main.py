@@ -22,7 +22,7 @@ video_list = [str(item) for videos in detected_videos for item in videos]
 print(f"{'Detected video in current folder': <20}:")
 print(f"\n".join(video_list))
 if not video_list:
-    print("No video detected in current folder.")
+    print("No video detected in current directory !!!")
     sys.exit()
 VIDEO_PATH = video_list[0]
 if len(video_list) > 1:
@@ -35,12 +35,14 @@ print(f"{'Video length': <20}: {VIDEO_LENGTH}")
 HAMMING_THRESHOLD = 5
 REF_IMG_PATH = Path.cwd().joinpath("ref.png")
 if not REF_IMG_PATH.is_file():
-    raise FileNotFoundError(f"Unable to find '{REF_IMG_PATH}'!!!")
+    print(f"Unable to find '{REF_IMG_PATH}' in current directory !!!")
+    sys.exit()
 STEPS = 15
 print(f"Using '{str(REF_IMG_PATH)}' as reference image to split video.")
 OUTPUT_FOLDER = Path.cwd().joinpath("split-video")
 if not OUTPUT_FOLDER.is_dir():
     OUTPUT_FOLDER.mkdir(parents=True, exist_ok=True)
+    print(f"'{OUTPUT_FOLDER}' does not exist. Creating it...")
 
 
 def temp() -> None:
@@ -219,7 +221,7 @@ def multi_split(marks: list[str]) -> None:
             video=VIDEO_PATH,
             start_time=marks[index],
             end_time=marks[index + 1],
-            output=f"output-{index}.mkv",
+            output=str(OUTPUT_FOLDER.joinpath(f"split_{(index + 1) / 2}.mkv")),
         )
 
 
