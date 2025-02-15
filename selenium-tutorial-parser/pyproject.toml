@@ -14,6 +14,7 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
+    "python-dotenv>=1.0.1",
     "selenium>=4.28.1",
 ]
 
