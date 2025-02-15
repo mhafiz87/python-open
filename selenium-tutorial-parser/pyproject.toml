@@ -1,0 +1,42 @@
+[project]
+name = "selenium-tutorial-parser"
+version = "0.0.1"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+keywords = []
+authors = [
+  { name = "Muhammad Hafiz bin Muhamad", email = "mhafiz.muhamad@gmail.com" }
+]
+classifiers = [
+  "Private :: Do not Upload",
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "selenium>=4.28.1",
+]
+
+# [project.scripts]
+
+# [project.urls]
+
+
+[dependency-groups]
+dev = [
+    # "pytest>=8.3.4",
+    "ipykernel>=6.29.5",  # for vscode jupyter extension
+]
+
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"
+
+[tool.basedpyright]
+reportOptionalMemberAccess = "none"
+typeCheckingMode = "standard"
+
+[tool.uv]
+package = true
