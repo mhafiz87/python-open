@@ -154,4 +154,17 @@ typeCheckingMode = "standard"
   uv pip freeze
   ```
 
+- To install project as editable and from pyproject dependencies. Make sure current directory is at the root project directory.
+
+  ```powershell
+  uv pip install -e . -r pyproject.toml
+  ```
+  
+- To sync project with updated pyproject.
+
+  ```powershell
+  uv sync
+  ```
+  
+
 ## Project Setup Using [Hatch](https://github.com/pypa/hatch)
