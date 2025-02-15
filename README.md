@@ -9,7 +9,8 @@ A reference guide for Python.
 | Num | Name                  | Branch                    | Summary                                                                                                                  | Status |
 | --: | :-------------------- | :------------------------ | :----------------------------------------------------------------------------------------------------------------------- | :----- |
 |   1 | Hello World UV        | 0000-hello-world-uv       |                                                                                                                          | WIP    |
-|   2 | OpenCV Video Splitter | 0001-openv-video-splitter | Use OpenCV to read video data, detect common patterns between each sections, and split the video into multiple sections. | Idea      |
+|   2 | OpenCV Video Splitter | 0001-openv-video-splitter | Use OpenCV to read video data, detect common patterns between each sections, and split the video into multiple sections. | WIP      |
+|   3 | Selenium Tutorial Parser | 0002-selenium-tutorial-parser | Use selenium to parse tutorial page. | Idea      |
 
 </details>
 
