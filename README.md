@@ -6,11 +6,12 @@ A reference guide for Python.
 
   <summary><strong>Projects</strong></summary>
 
-| Num | Name                  | Branch                    | Summary                                                                                                                  | Status |
-| --: | :-------------------- | :------------------------ | :----------------------------------------------------------------------------------------------------------------------- | :----- |
-|   1 | Hello World UV        | 0000-hello-world-uv       |                                                                                                                          | WIP    |
-|   2 | OpenCV Video Splitter | 0001-openv-video-splitter | Use OpenCV to read video data, detect common patterns between each sections, and split the video into multiple sections. | WIP      |
-|   3 | Selenium Tutorial Parser | 0002-selenium-tutorial-parser | Use selenium to parse tutorial page. | Idea      |
+| Num | Name                     | Branch                        | Summary                                                                                                                  | Status |
+| --: | :----------------------- | :---------------------------- | :----------------------------------------------------------------------------------------------------------------------- | :----- |
+|   1 | Hello World UV           | 0000-hello-world-uv           |                                                                                                                          | WIP    |
+|   2 | OpenCV Video Splitter    | 0001-openv-video-splitter     | Use OpenCV to read video data, detect common patterns between each sections, and split the video into multiple sections. | WIP    |
+|   3 | Selenium Tutorial Parser | 0002-selenium-tutorial-parser | Use selenium to parse tutorial page.                                                                                     | Idea   |
+|   4 | Gitlab REST API          | 0003-gitlab-rest-api          | Use gitlab rest api to beautify information (issues, milestones, etc ...)                                                | WIP    |
 
 </details>
 
@@ -159,12 +160,11 @@ typeCheckingMode = "standard"
   ```powershell
   uv pip install -e . -r pyproject.toml
   ```
-  
+
 - To sync project with updated pyproject.
 
   ```powershell
   uv sync
   ```
-  
 
 ## Project Setup Using [Hatch](https://github.com/pypa/hatch)
