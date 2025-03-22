@@ -12,6 +12,7 @@ A reference guide for Python.
 |   2 | OpenCV Video Splitter    | 0001-openv-video-splitter     | Use OpenCV to read video data, detect common patterns between each sections, and split the video into multiple sections. | WIP    |
 |   3 | Selenium Tutorial Parser | 0002-selenium-tutorial-parser | Use selenium to parse tutorial page.                                                                                     | Idea   |
 |   4 | Gitlab REST API          | 0003-gitlab-rest-api          | Use gitlab rest api to beautify information (issues, milestones, etc ...)                                                | WIP    |
+|   5 | Debugger Adapter Protocol (DAP)          | 0004-DAP          | Learn how to utilize the Debugger Adapter Protocol (DAP)                                                | WIP    |
 
 </details>
 
