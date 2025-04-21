@@ -48,10 +48,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hello-world-uv"
-version = "0.0.1"
+version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 license = {file = "LICENSE"}
 keywords = []
 authors = [
@@ -60,7 +60,7 @@ authors = [
 classifiers = [
   "Private :: Do not Upload",
   "Development Status :: 3 - Alpha",
-  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
 ]
 dependencies = []
 
@@ -100,6 +100,7 @@ reportUnusedImport = "none"
 reportUnusedParameter = "none"
 reportUnusedVariable = "none"
 typeCheckingMode = "standard"
+
 ```
 
 ## Project Setup Using [UV](https://github.com/astral-sh/uv)
