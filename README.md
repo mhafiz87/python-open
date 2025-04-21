@@ -64,6 +64,18 @@ classifiers = [
 ]
 dependencies = []
 
+[project.optional-dependencies]
+dev = [
+  "black",
+  "ruff",
+  "pytest", # "pytest-asyncio"
+  "pytest-httpx",
+  "coverage",
+  "refurb",
+  "basedpyright",
+  "debugpy",
+]
+
 # [project.scripts]
 
 # [project.urls]
@@ -74,8 +86,19 @@ line-length = 88
 [tool.isort]
 profile = "black"
 
+[tool.ruff]
+indent-width = 4
+line-length = 88
+
+[tool.ruff.lint]
+extend-select = ["ARG", "E", "F", "W"]
+ignore = ["E501"]
+
 [tool.basedpyright]
 reportOptionalMemberAccess = "none"
+reportUnusedImport = "none"
+reportUnusedParameter = "none"
+reportUnusedVariable = "none"
 typeCheckingMode = "standard"
 ```
 
