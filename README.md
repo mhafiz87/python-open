@@ -24,6 +24,21 @@ A reference guide for Python.
   python -m pip install --upgrade pip setuptools wheel
   ```
 
+## Tools Via UV
+
+- Install these tools so it can be used globally
+  - ruff
+  - black
+  - isort
+
+```bash
+uv tool install ruff@latest
+uv tool install basedpyright@latest
+uv tool install black@latest
+uv tool install isort@latest
+uv tool install git-cliff@latest
+```
+
 ## Project Structure
 
 ```
