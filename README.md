@@ -54,70 +54,6 @@ uv tool install git-cliff@latest
 └── pyproject.toml
 ```
 
-## PyProject Template
-
-```
-[build-system]
-requires = ["pip", "setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
-
-[project]
-name = "hello-world-uv"
-version = "0.1.0"
-description = "Add your description here"
-readme = "README.md"
-requires-python = ">=3.13"
-license = {file = "LICENSE"}
-keywords = []
-authors = [
-  { name = "your-name", email = "your-email" }
-]
-classifiers = [
-  "Private :: Do not Upload",
-  "Development Status :: 3 - Alpha",
-  "Programming Language :: Python :: 3.13",
-]
-dependencies = []
-
-[project.optional-dependencies]
-dev = [
-  "black",
-  "ruff",
-  "pytest", # "pytest-asyncio"
-  "pytest-httpx",
-  "coverage",
-  "refurb",
-  "basedpyright",
-  "debugpy",
-]
-
-# [project.scripts]
-
-# [project.urls]
-
-[tool.black]
-line-length = 88
-
-[tool.isort]
-profile = "black"
-
-[tool.ruff]
-indent-width = 4
-line-length = 88
-
-[tool.ruff.lint]
-extend-select = ["ARG", "E", "F", "W"]
-ignore = ["E501"]
-
-[tool.basedpyright]
-reportOptionalMemberAccess = "none"
-reportUnusedImport = "none"
-reportUnusedParameter = "none"
-reportUnusedVariable = "none"
-typeCheckingMode = "standard"
-
-```
-
 ## Project Setup Using [UV](https://github.com/astral-sh/uv)
 
 - Create a new project
@@ -180,6 +116,13 @@ typeCheckingMode = "standard"
   uv add --dev <package>
   ```
 
+- Useful packages to be included in development:
+
+  ```powershell
+  uv add --dev debugpy
+  uv add --dev pytest
+  ```
+
 - Remove packages from project.
 
   ```powershell
@@ -206,5 +149,68 @@ typeCheckingMode = "standard"
   ```powershell
   uv sync
   ```
+
+## PyProject Template
+
+```
+[build-system]
+requires = ["pip", "setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hello-world-uv"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+license = {file = "LICENSE"}
+keywords = []
+authors = [
+  { name = "your-name", email = "your-email" }
+]
+classifiers = [
+  "Private :: Do not Upload",
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3.13",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+  "pytest", # "pytest-asyncio"
+  "pytest-httpx",
+  "coverage",
+  "refurb",
+  "debugpy",
+]
+
+# [project.scripts]
+
+# [project.urls]
+
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"
+
+[tool.ruff]
+indent-width = 4
+line-length = 88
+
+[tool.ruff.lint]
+extend-select = ["ARG", "E", "F", "W"]
+ignore = ["E501"]
+
+[tool.basedpyright]
+reportOptionalMemberAccess = "none"
+reportUnusedImport = "none"
+reportUnusedParameter = "none"
+reportUnusedVariable = "none"
+typeCheckingMode = "standard"
+
+```
+
+
 
 ## Project Setup Using [Hatch](https://github.com/pypa/hatch)
