@@ -174,3 +174,4 @@ cython_debug/
 .nvim
 .python-version
 uv.lock
+0007-excel/data/
