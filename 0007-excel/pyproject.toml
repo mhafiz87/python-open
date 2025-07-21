@@ -1,0 +1,57 @@
+[project]
+name = "0007-excel"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+
+license = {file = "LICENSE"}
+keywords = []
+authors = [
+  { name = "Muhammad Hafiz bin Muhamad", email = "mhafiz87.engineer@gmail.com" }
+]
+classifiers = [
+  "Private :: Do not Upload",
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3.13",
+]
+
+dependencies = [
+    "openpyxl>=3.1.5",
+]
+
+# [project.optional-dependencies]
+# dev = [
+#   "pytest", # "pytest-asyncio"
+#   "pytest-httpx",
+#   "coverage",
+#   "refurb",
+#   "debugpy",
+# ]
+
+# [project.scripts]
+
+# [project.urls]
+
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"
+
+[tool.ruff]
+indent-width = 4
+line-length = 88
+
+[tool.ruff.lint]
+extend-select = ["ARG", "E", "F", "W"]
+ignore = ["E501"]
+
+[tool.basedpyright]
+reportOptionalMemberAccess = "none"
+reportUnusedImport = "none"
+reportUnusedParameter = "none"
+reportUnusedVariable = "none"
+typeCheckingMode = "standard"
+
+
