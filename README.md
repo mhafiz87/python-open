@@ -6,17 +6,16 @@ A reference guide for Python.
 
   <summary><strong>Projects</strong></summary>
 
-| Num | Name                     | Branch                        | Summary                                                                                                                  | Status |
-| --: | :----------------------- | :---------------------------- | :----------------------------------------------------------------------------------------------------------------------- | :----- |
-|   0 | Hello World UV           | 0000-hello-world-uv           |                                                                                                                          | WIP    |
-|   1 | OpenCV Video Splitter    | 0001-openv-video-splitter     | Use OpenCV to read video data, detect common patterns between each sections, and split the video into multiple sections. | WIP    |
-|   2 | Selenium Tutorial Parser | 0002-selenium-tutorial-parser | Use selenium to parse tutorial page.                                                                                     | Idea   |
-|   3 | Gitlab REST API          | 0003-gitlab-rest-api          | Use gitlab rest api to beautify information (issues, milestones, etc ...)                                                | WIP    |
-|   4 | Debugger Adapter Protocol (DAP)          | 0004-DAP          | Learn how to utilize the Debugger Adapter Protocol (DAP)                                                | WIP    |
-|   5 | Text To Speech To Bin | 0005-text-to-speech-to-bin | Use text to speech to convert text to binary data.                                                                        | WIP    |
-| 6 | Pytest Learn | | | |
-| 7 | Excel | 0007-excel | | WIP |
-
+| Num | Name                            | Branch                        | Summary                                                                                                                  | Status |
+| --: | :------------------------------ | :---------------------------- | :----------------------------------------------------------------------------------------------------------------------- | :----- |
+|   0 | Hello World UV                  | 0000-hello-world-uv           |                                                                                                                          | WIP    |
+|   1 | OpenCV Video Splitter           | 0001-openv-video-splitter     | Use OpenCV to read video data, detect common patterns between each sections, and split the video into multiple sections. | WIP    |
+|   2 | Selenium Tutorial Parser        | 0002-selenium-tutorial-parser | Use selenium to parse tutorial page.                                                                                     | Idea   |
+|   3 | Gitlab REST API                 | 0003-gitlab-rest-api          | Use gitlab rest api to beautify information (issues, milestones, etc ...)                                                | WIP    |
+|   4 | Debugger Adapter Protocol (DAP) | 0004-DAP                      | Learn how to utilize the Debugger Adapter Protocol (DAP)                                                                 | WIP    |
+|   5 | Text To Speech To Bin           | 0005-text-to-speech-to-bin    | Use text to speech to convert text to binary data.                                                                       | WIP    |
+|   6 | Pytest Learn                    |                               |                                                                                                                          |        |
+|   7 | Excel                           | 0007-excel                    |                                                                                                                          | WIP    |
 
 </details>
 
@@ -215,7 +214,5 @@ reportUnusedVariable = "none"
 typeCheckingMode = "standard"
 
 ```
-
-
 
 ## Project Setup Using [Hatch](https://github.com/pypa/hatch)
