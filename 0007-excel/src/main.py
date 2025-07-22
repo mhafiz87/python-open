@@ -1,31 +1,34 @@
 from pathlib import Path
-from pprint import pprint
 
 import pandas as pd
-from openpyxl import load_workbook
+from pandas import DataFrame
 
-DATAPATH = Path(__file__).parent.parent.resolve() / "data" / "temp_data.xlsx"
+FIRST_FILE = Path(__file__).parent.parent.resolve() / "data" / "temp_data.xlsx"
+SECOND_FILE = Path(__file__).parent.parent.resolve() / "data" / "temp_data_2.xlsx"
+MERGE_FILE = Path(__file__).parent.parent.resolve() / "data" / "temp_data_merge.xlsx"
+
+MERGE_COLUMNS = [
+    "Automatable with current Orbital V2 Features (July 2025)",
+    "To Automate",
+    "Remarks",
+    "Remarks 2",
+    "Questions",
+]
 
 
-def try_openpyxl():
-    workbook = load_workbook(DATAPATH)
-    active_sheet = workbook.active
-    print(f"{'Row': <7}: {active_sheet.max_row}")
-    print(f"{'Column': <7}: {active_sheet.max_column}")
-    for index in range(1, active_sheet.max_column + 1):
-        print(f"{active_sheet.cell(row=1, column=index).value}")
-    for index in range(1, active_sheet.max_row + 1):
-        print(f"{active_sheet.cell(row=index, column=1).value}")
-
-
-def try_pandas():
-    df = pd.read_excel(DATAPATH)
-    data_dict = df.to_dict(orient="records")
-    pprint(data_dict)
+def merge_df(df_1: DataFrame, df_2: DataFrame) -> None:
+    df_1 = df_1.fillna("").astype(str)
+    df_2 = df_2.fillna("").astype(str)
+    df_1_id = df_1["ID"].tolist()
+    for id in range(len(df_1_id)):
+        df_2.loc[df_2["ID"] == df_1_id[id], MERGE_COLUMNS] = df_1.loc[
+            df_1["ID"] == df_1_id[id], MERGE_COLUMNS
+        ]
+    df_2.to_excel(MERGE_FILE, index=False)
 
 
 def main():
-    try_pandas()
+    merge_df(pd.read_excel(FIRST_FILE), pd.read_excel(SECOND_FILE))
 
 
 if __name__ == "__main__":
