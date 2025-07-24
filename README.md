@@ -41,6 +41,7 @@ uv tool install black@latest
 uv tool install isort@latest
 uv tool install git-cliff@latest
 uv tool install yamlfix@latest
+uv tool install pre-commit@latest
 ```
 
 ## Project Structure
