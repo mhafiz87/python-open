@@ -8,11 +8,9 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 keywords = []
-authors = [
-  { name = "your-name", email = "your-email" }
-]
+authors = [{ name = "your-name", email = "your-email" }]
 classifiers = [
   "Private :: Do not Upload",
   "Development Status :: 3 - Alpha",
@@ -21,11 +19,7 @@ classifiers = [
 dependencies = []
 
 [dependency-groups]
-dev = [
-    "basedpyright>=1.29.2",
-    "black>=25.1.0",
-    "pytest>=8.3.5",
-]
+dev = ["basedpyright>=1.29.2", "black>=25.1.0", "pytest>=8.3.5"]
 
 # [project.scripts]
 
