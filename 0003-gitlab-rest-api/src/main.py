@@ -36,6 +36,7 @@ class Issue:
     due: str = ""
     title: str = ""
     lables: list[str] = field(default_factory=list)
+    web_url: str = ""
 
 
 load_dotenv()
@@ -118,7 +119,7 @@ def list_issues(issues: IssueFilter | None = None) -> list[Issue]:
             temp.due = item["due_date"]
             temp.title = item["title"]
             temp.lables = item["labels"]
-            # print(f"{issues_count:<2}: {temp.assignee} : {item['title']}")
+            temp.web_url = item["web_url"]
             list_issues.append(temp)
             issues_count += 1
     print(f"Total open issues: {issues_count - 1}")
@@ -135,9 +136,10 @@ def debug() -> None:
         params.update({"page": str(page)})
         response = httpx.get(url, headers=headers, params=params)
         for item in response.json():
-            for key in item.keys():
-                print(f"{key}")
-            break
+            print(item)
+            # for key in item.keys():
+            #     print(f"{key}")
+            # break
         print("-" * 20)
 
 
