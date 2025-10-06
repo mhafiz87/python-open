@@ -1,10 +1,11 @@
 import os
 from dataclasses import dataclass, field
+from pprint import pprint as print
 
 import httpx
 from dotenv import load_dotenv
 
-__all__ = ["IssueFilter", "list_issues"]
+__all__ = ["IssueFilter", "Issue", "list_issues"]
 
 
 @dataclass
@@ -31,6 +32,7 @@ class Issue:
 
     milestone: str = ""
     assignee: str = ""
+    assignee_id: str = ""
     due: str = ""
     title: str = ""
     lables: list[str] = field(default_factory=list)
@@ -109,6 +111,9 @@ def list_issues(issues: IssueFilter | None = None) -> list[Issue]:
             temp.assignee = (
                 item["assignee"]["name"] if item["assignee"] else "Unassigned"
             )
+            temp.assignee_id = (
+                item["assignee"]["username"] if item["assignee"] else "Unassigned"
+            )
             temp.milestone = item["milestone"]["title"] if item["milestone"] else "N/A"
             temp.due = item["due_date"]
             temp.title = item["title"]
@@ -118,6 +123,22 @@ def list_issues(issues: IssueFilter | None = None) -> list[Issue]:
             issues_count += 1
     print(f"Total open issues: {issues_count - 1}")
     return list_issues
+
+
+def debug() -> None:
+    headers = {"PRIVATE-TOKEN": TOKEN}
+    url = f"{URL}/projects/{PROJECT_ID}/issues"
+    params = {"scope": "all", "state": "opened", "issue_type": "issue"}
+    response = httpx.get(url, headers=headers, params=params)
+    total_pages = int(response.headers["X-Total-Pages"])
+    for page in range(1, total_pages + 1):
+        params.update({"page": str(page)})
+        response = httpx.get(url, headers=headers, params=params)
+        for item in response.json():
+            for key in item.keys():
+                print(f"{key}")
+            break
+        print("-" * 20)
 
 
 if __name__ == "__main__":
