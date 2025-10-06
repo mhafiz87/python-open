@@ -1,5 +1,5 @@
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import httpx
 from dotenv import load_dotenv
@@ -18,6 +18,22 @@ class IssueFilter:
 
     milestone: str = ""
     assignee_username: str = ""
+
+
+@dataclass
+class Issue:
+    """Class for issue
+
+    Attributes:
+        milestone: str
+        assignee: str
+    """
+
+    milestone: str = ""
+    assignee: str = ""
+    due: str = ""
+    title: str = ""
+    lables: list[str] = field(default_factory=list)
 
 
 load_dotenv()
@@ -63,13 +79,13 @@ def find_id(name: str) -> str:
     return id
 
 
-# def list_issues(milestone: str = "", assignee: str = ""):
-def list_issues(issues: IssueFilter | None = None):
-    # """list issues
-    # Args:
-    #     milestone(str): to filter by milestone
-    #     assignee(str): to filter by assignee
-    # """
+def list_issues(issues: IssueFilter | None = None) -> list[Issue]:
+    """list issues
+
+    Args:
+        issues(IssueFilter | None): issue filter
+    """
+    list_issues: list[Issue] = []
     issues_count: int = 1
     headers = {"PRIVATE-TOKEN": TOKEN}
     # url = f"{URL}/projects/{PROJECT_ID}/issues_statistics"
@@ -89,10 +105,19 @@ def list_issues(issues: IssueFilter | None = None):
         params.update({"page": str(page)})
         response = httpx.get(url, headers=headers, params=params)
         for item in response.json():
-            assignee = item["assignee"]["name"] if item["assignee"] else "Unassigned"
-            print(f"{issues_count:<2}: {assignee} : {item['title']}")
+            temp = Issue()
+            temp.assignee = (
+                item["assignee"]["name"] if item["assignee"] else "Unassigned"
+            )
+            temp.milestone = item["milestone"]["title"] if item["milestone"] else "N/A"
+            temp.due = item["due_date"]
+            temp.title = item["title"]
+            temp.lables = item["labels"]
+            # print(f"{issues_count:<2}: {temp.assignee} : {item['title']}")
+            list_issues.append(temp)
             issues_count += 1
     print(f"Total open issues: {issues_count - 1}")
+    return list_issues
 
 
 if __name__ == "__main__":
