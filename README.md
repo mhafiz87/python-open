@@ -19,7 +19,17 @@ A reference guide for Python.
 
 </details>
 
-## Tools Via UV
+## UV
+
+### Update UV
+
+```bash
+uv self update
+```
+
+### Tool
+
+#### Install
 
 - Install these tools so it can be used globally
   - ruff
@@ -32,6 +42,12 @@ uv tool install basedpyright@latest --python 3.13.9
 uv tool install git-cliff@latest --python 3.13.9
 uv tool install yamlfix@latest --python 3.13.9
 uv tool install refurb@latest --python 3.13.9
+```
+
+#### Uninstall
+
+```bash
+uv tool uninstall ruff basedpyright git-cliff yamlfix refurb
 ```
 
 ## Project Structure
@@ -104,18 +120,26 @@ uv tool install refurb@latest --python 3.13.9
   touch LICENSE
   ```
 
-- Add packages to project.
+- Add dependency packages to project.
 
   ```powershell
   uv add <package>
-  uv add --dev <package>
+  uv add "<package>; sys_platform == 'linux'"
+  uv add "<package>; python_version >= '3.11'"
+  uv add "<package> >=7.1.0,<8; sys_platform == 'linux'; python_version < '3.10'"
   ```
 
-- Useful packages to be included in development:
+- Add project optional dependency packages for extra features:
 
   ```powershell
-  uv add --dev debugpy
-  uv add --dev pytest
+  uv add <package> --optional <feature>
+  ```
+
+- Add package to dependency group (usually for development purposes)
+
+  ```powershell
+  uv add --test pytest
+  uv add --debug debugpy
   ```
 
 - Remove packages from project.
@@ -177,6 +201,12 @@ dev = [
   "coverage",
   "refurb",
   "debugpy",
+]
+
+# for development only
+[dependency-groups]
+dev = [
+  "debugpy"
 ]
 
 # [project.scripts]
