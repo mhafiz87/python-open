@@ -167,6 +167,7 @@ uv tool uninstall ruff basedpyright git-cliff yamlfix refurb
 
   ```powershell
   uv sync
+  uv sync --group <group-name>
   ```
 
 ## PyProject Template
