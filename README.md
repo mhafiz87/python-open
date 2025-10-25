@@ -35,14 +35,11 @@ A reference guide for Python.
   - isort
 
 ```bash
-uv tool install ruff@latest
-uv tool install basedpyright@latest
-uv tool install black@latest
-uv tool install isort@latest
-uv tool install git-cliff@latest
-uv tool install yamlfix@latest
-uv tool install pre-commit@latest
-uv tool isntall refurb@latest
+uv tool install ruff@latest --python 3.13.9
+uv tool install basedpyright@latest --python 3.13.9
+uv tool install git-cliff@latest --python 3.13.9
+uv tool install yamlfix@latest --python 3.13.9
+uv tool isntall refurb@latest --python 3.13.9
 ```
 
 ## Project Structure
