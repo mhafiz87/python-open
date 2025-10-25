@@ -19,14 +19,6 @@ A reference guide for Python.
 
 </details>
 
-## Pip Modules
-
-- Update `pip`, `setuptools` and `wheel` to the latest versions:
-
-  ```powershell
-  python -m pip install --upgrade pip setuptools wheel
-  ```
-
 ## Tools Via UV
 
 - Install these tools so it can be used globally
@@ -191,12 +183,6 @@ dev = [
 
 # [project.urls]
 
-[tool.black]
-line-length = 88
-
-[tool.isort]
-profile = "black"
-
 [tool.ruff]
 indent-width = 4
 line-length = 88
@@ -211,7 +197,81 @@ reportUnusedImport = "none"
 reportUnusedParameter = "none"
 reportUnusedVariable = "none"
 typeCheckingMode = "standard"
-
 ```
+
+## Keep In View
+
+### Pyproject with build?
+
+<details>
+
+  <summary><strong>Pyproject with build?</strong></summary>
+
+  ```toml
+  [build-system]
+  requires = ["pip", "setuptools", "wheel"]
+  build-backend = "setuptools.build_meta"
+
+  [project]
+  name = "hello-world-uv"
+  version = "0.1.0"
+  description = "Add your description here"
+  readme = "README.md"
+  requires-python = ">=3.13"
+  license = {file = "LICENSE"}
+  keywords = []
+  authors = [
+    { name = "your-name", email = "your-email" }
+  ]
+  classifiers = [
+    "Private :: Do not Upload",
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3.13",
+  ]
+  dependencies = []
+
+  [project.optional-dependencies]
+  dev = [
+    "pytest", # "pytest-asyncio"
+    "pytest-httpx",
+    "coverage",
+    "refurb",
+    "debugpy",
+  ]
+
+  # [project.scripts]
+
+  # [project.urls]
+
+  [tool.ruff]
+  indent-width = 4
+  line-length = 88
+
+  [tool.ruff.lint]
+  extend-select = ["ARG", "E", "F", "W"]
+  ignore = ["E501"]
+
+  [tool.basedpyright]
+  reportOptionalMemberAccess = "none"
+  reportUnusedImport = "none"
+  reportUnusedParameter = "none"
+  reportUnusedVariable = "none"
+  typeCheckingMode = "standard"
+```
+  
+</details>
+
+### Pip Modules
+
+<details>
+
+  <summary><strong>Pip Modules</strong></summary>
+  - Update `pip`, `setuptools` and `wheel` to the latest versions:
+
+  ```powershell
+  python -m pip install --upgrade pip setuptools wheel
+  ```
+
+</details>
 
 ## Project Setup Using [Hatch](https://github.com/pypa/hatch)
