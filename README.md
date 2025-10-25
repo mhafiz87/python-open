@@ -147,7 +147,7 @@ uv tool install refurb@latest --python 3.13.9
 
 ## PyProject Template
 
-```
+```toml
 [build-system]
 requires = ["pip", "setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
