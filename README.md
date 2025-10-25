@@ -39,7 +39,7 @@ uv tool install ruff@latest --python 3.13.9
 uv tool install basedpyright@latest --python 3.13.9
 uv tool install git-cliff@latest --python 3.13.9
 uv tool install yamlfix@latest --python 3.13.9
-uv tool isntall refurb@latest --python 3.13.9
+uv tool install refurb@latest --python 3.13.9
 ```
 
 ## Project Structure
