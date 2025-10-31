@@ -71,13 +71,13 @@ uv tool uninstall ruff basedpyright git-cliff yamlfix refurb
 
 - Create a new project
 
-  ```powershell
+  ```bash
   uv init <project-name>
   ```
 
 - Initialize current project
 
-  ```powershell
+  ```bash
   cd <project directory>
   uv init
   ```
@@ -94,13 +94,13 @@ uv tool uninstall ruff basedpyright git-cliff yamlfix refurb
 
 - Set project python version:
 
-  ```powershell
+  ```bash
   uv python pin <python-version>
   ```
 
 - To create vitual environment, run below command. This will create a folder named `.venv`. **_Optional, uv will auto create virtual environment when adding packages_**
 
-  ```powershell
+  ```bash
   uv venv
   ```
 
@@ -117,14 +117,14 @@ uv tool uninstall ruff basedpyright git-cliff yamlfix refurb
 
 - Create relevant files and folders. Ensure current working directory is set to `<project-name>`.
 
-  ```powershell
+  ```bash
   mkdir docs, src, tests
   touch LICENSE
   ```
 
 - Add dependency packages to project.
 
-  ```powershell
+  ```bash
   uv add <package>
   uv add "<package>; sys_platform == 'linux'"
   uv add "<package>; python_version >= '3.11'"
@@ -133,27 +133,27 @@ uv tool uninstall ruff basedpyright git-cliff yamlfix refurb
 
 - Add project optional dependency packages for extra features:
 
-  ```powershell
+  ```bash
   uv add <package> --optional <feature>
   ```
 
 - Add package to dependency group (usually for development purposes)
 
-  ```powershell
+  ```bash
   uv add --test pytest
   uv add --debug debugpy
   ```
 
 - Remove packages from project.
 
-  ```powershell
+  ```bash
   uv remove <package>
   uv remove --dev <package>
   ```
 
 - To view installed packages, run below command.
 
-  ```powershell
+  ```bash
   uv pip list
   # or
   uv pip freeze
@@ -161,13 +161,13 @@ uv tool uninstall ruff basedpyright git-cliff yamlfix refurb
 
 - To install project as editable and from pyproject dependencies. Make sure current directory is at the root project directory.
 
-  ```powershell
+  ```bash
   uv pip install -e . -r pyproject.toml
   ```
 
 - To sync project with updated pyproject.
 
-  ```powershell
+  ```bash
   uv sync
   uv sync --group <group-name>
   ```
@@ -301,7 +301,7 @@ typeCheckingMode = "standard"
   <summary><strong>Pip Modules</strong></summary>
   - Update `pip`, `setuptools` and `wheel` to the latest versions:
 
-  ```powershell
+  ```bash
   python -m pip install --upgrade pip setuptools wheel
   ```
 
