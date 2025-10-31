@@ -199,17 +199,15 @@ dependencies = []
 
 [project.optional-dependencies]
 dev = [
-  "pytest", # "pytest-asyncio"
-  "pytest-httpx",
-  "coverage",
-  "refurb",
-  "debugpy",
 ]
 
 # for development only
 [dependency-groups]
 dev = [
-  "debugpy"
+  "pytest"
+# "pytest-asyncio"
+# "pytest-httpx",
+# "coverage",
 ]
 
 # [project.scripts]
