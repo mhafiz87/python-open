@@ -140,8 +140,7 @@ uv tool uninstall ruff basedpyright git-cliff yamlfix refurb
 - Add package to dependency group (usually for development purposes)
 
   ```bash
-  uv add --test pytest
-  uv add --debug debugpy
+  uv add --dev pytest
   ```
 
 - Remove packages from project.
