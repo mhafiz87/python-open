@@ -19,6 +19,18 @@ A reference guide for Python.
 
 </details>
 
+## Git
+
+### gitattributes
+
+```powershell
+Set-Content -Path ".gittattributes" -Value @("*.sh text eol=lf", "*.yml text eol=lf")
+```
+
+```bash
+echo -e "*.sh text eol=lf\n*.yml text eol=lf\n" > .gitattributes
+```
+
 ## UV
 
 ### Update UV
