@@ -44,6 +44,7 @@ uv tool install hererocks@latest --python 3.13.9
 uv tool install git-cliff@latest --python 3.13.9
 uv tool install yamlfix@latest --python 3.13.9
 uv tool install refurb@latest --python 3.13.9
+uv tool install shellcheck-py@latest --python 3.13.9
 ```
 
 #### Uninstall
