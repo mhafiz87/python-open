@@ -23,6 +23,8 @@ A reference guide for Python.
 
 ### gitattributes
 
+- To ensure line endings are consistent
+
 ```powershell
 Set-Content -Path ".gittattributes" -Value @("*.sh text eol=lf", "*.yml text eol=lf")
 ```
