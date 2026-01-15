@@ -51,16 +51,16 @@ uv self update
   - isort
 
 ```bash
-uv tool install ruff@latest --python 3.13.9
-uv tool install basedpyright@latest --python 3.13.9
-uv tool install debugpy@latest --python 3.13.9
-uv tool install hererocks@latest --python 3.13.9
-uv tool install git-cliff@latest --python 3.13.9
-uv tool install yamlfix@latest --python 3.13.9
-uv tool install refurb@latest --python 3.13.9
-uv tool install shellcheck-py@latest --python 3.13.9
-uv tool install --with mdformat-gfm mdformat --python 3.13.9
-uv tool install pynvim@latest --python 3.13.9
+uv tool install ruff@latest --python 3.13.11
+uv tool install basedpyright@latest --python 3.13.11
+uv tool install debugpy@latest --python 3.13.11
+uv tool install hererocks@latest --python 3.13.11
+uv tool install git-cliff@latest --python 3.13.11
+uv tool install yamlfix@latest --python 3.13.11
+uv tool install refurb@latest --python 3.13.11
+uv tool install shellcheck-py@latest --python 3.13.11
+uv tool install --with mdformat-gfm mdformat --python 3.13.11
+uv tool install pynvim@latest --python 3.13.11
 ```
 
 #### Uninstall
