@@ -62,6 +62,10 @@ def connect_obs_socket() -> obs.ReqClient:
     return obs_cl
 
 
+def send_spacebar() -> None:
+    driver.find_element(By.TAG_NAME, "body").send_keys(Keys.SPACE)
+
+
 def get_title() -> str:
     element = driver.find_element(
         by=By.XPATH, value='//h1[@data-purpose = "course-header-title"]'
@@ -102,8 +106,13 @@ def create_section_folder() -> None:
         print(f"Created directory: {dir}")
 
 
-def set_output_dir(title: str = "") -> None:
-    pass
+def set_output_dir(section: str) -> None:
+    dir = root_output_dir / section
+    obs_cl.set_profile_parameter("SimpleOutput", "FilePath", dir.as_posix())
+
+
+def set_output_filename(name: str) -> None:
+    obs_cl.set_profile_parameter("Output", "FilenameFormatting", name)
 
 
 def is_current_page_video() -> bool:
@@ -145,6 +154,40 @@ def is_next_right_button_exist() -> tuple[bool, WebElement | None]:
         return False, None
 
 
+def is_media_paused() -> bool:
+    try:
+        WebDriverWait(driver, 2).until(
+            EC.presence_of_element_located((By.XPATH, element_data["play_button"]))
+        )
+        print("Media is paused.")
+        return True
+    except Exception:
+        print("Media is playing.")
+        return False
+
+
+def is_media_ended() -> bool:
+    try:
+        WebDriverWait(driver, 2).until(
+            EC.presence_of_element_located((By.XPATH, element_data["cancel_button"]))
+        )
+        print("Media has ended.")
+        return True
+    except Exception:
+        print("Media is playing...")
+        return False
+
+
+def restart_media() -> None:
+    try:
+        element = WebDriverWait(driver, 0.5).until(
+            EC.presence_of_element_located((By.XPATH, element_data["video_class"]))
+        )
+        driver.execute_script("arguments[0].currentTime = 0;", element)
+    except Exception:
+        print("Unable to restart media.")
+
+
 if __name__ == "__main__":
     load_dotenv()
     driver = attach_chromedriver()
@@ -152,7 +195,21 @@ if __name__ == "__main__":
     create_output_dir()
     create_section_folder()
     while True:
-        get_current_media_info()
+        if is_current_page_video():
+            section, title = get_current_media_info()
+            set_output_dir(section)
+            set_output_filename(title)
+            if not is_media_paused():
+                send_spacebar()  # pause
+            restart_media()
+            time.sleep(0.5)
+            ActionChains(driver).move_by_offset(15, 15).perform()
+            time.sleep(3)
+            obs_cl.start_record()
+            send_spacebar()  # play
+            while not is_media_ended():
+                time.sleep(0.5)
+            # obs_cl.stop_record()
         right_button = is_next_right_button_exist()
         if right_button[0]:
             right_button[1].click()
