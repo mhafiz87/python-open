@@ -209,7 +209,7 @@ if __name__ == "__main__":
             send_spacebar()  # play
             while not is_media_ended():
                 time.sleep(0.5)
-            # obs_cl.stop_record()
+            obs_cl.stop_record()
         right_button = is_next_right_button_exist()
         if right_button[0]:
             right_button[1].click()
