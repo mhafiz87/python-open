@@ -117,9 +117,10 @@ def set_output_filename(name: str) -> None:
 
 def is_current_page_video() -> bool:
     try:
-        WebDriverWait(driver, 2).until(
+        element = WebDriverWait(driver, 2).until(
             EC.presence_of_element_located((By.XPATH, element_data["video_class"]))
         )
+        ActionChains(driver).move_to_element(element).perform()
         return True
     except Exception:
         return False
@@ -203,7 +204,7 @@ if __name__ == "__main__":
                 send_spacebar()  # pause
             restart_media()
             time.sleep(0.5)
-            ActionChains(driver).move_by_offset(15, 15).perform()
+            ActionChains(driver).move_by_offset(100, 100).perform()
             time.sleep(3)
             obs_cl.start_record()
             send_spacebar()  # play
