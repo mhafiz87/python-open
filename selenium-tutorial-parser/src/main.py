@@ -1,17 +1,8 @@
-"""
-1. Launch `OBS` with Web Socket Server enable.
-  1.1 Tools > Web Socket Server Settings
-  1.2 Enable Web Socket Server
-  1.3 Show connect info to get password
-  1.4 Store port and password in `.env` file
-
-"""
-
-
 # ruff: noqa: F401
 
 import os
 import time
+import traceback
 from pathlib import Path
 
 import obsws_python as obs
@@ -37,7 +28,8 @@ element_data = {
     "rewind_button": r'//button[@data-purpose = "rewind-skip-button"]',
     "video_class": r'//video[@class = "video-player--video-player--HiAnq"]',
 }
-root_output_dir = Path(__file__).parent / "output"
+# root_output_dir = Path(__file__).parent / "output"
+root_output_dir = Path("/home/autouser/output")
 
 
 def attach_chromedriver() -> ChromiumDriver:
@@ -94,24 +86,28 @@ def create_output_dir(title: str = "") -> None:
     output = root_output_dir
     if title:
         output = root_output_dir / title
-    output.mkdir(parents=True, exist_ok=True)
-    print(f"Output directory: {root_output_dir}")
+    if not output.is_dir():
+        output.mkdir(parents=True, exist_ok=True)
+    print(f"Created directory: {root_output_dir}")
 
 
 def create_section_folder() -> None:
     for section in get_sections():
         dir = root_output_dir / get_title() / section
         dir = dir.as_posix().replace(": ", " - ")
-        Path(dir).mkdir(parents=True, exist_ok=True)
+        if not Path(dir).is_dir():
+            Path(dir).mkdir(parents=True, exist_ok=True)
         print(f"Created directory: {dir}")
 
 
-def set_output_dir(section: str) -> None:
-    dir = root_output_dir / section
+def set_output_dir(name: str) -> None:
+    dir = root_output_dir / name
+    print(f"Setting output directory to: {dir.as_posix()}")
     obs_cl.set_profile_parameter("SimpleOutput", "FilePath", dir.as_posix())
 
 
 def set_output_filename(name: str) -> None:
+    print(f"Setting output filename to: {name}")
     obs_cl.set_profile_parameter("Output", "FilenameFormatting", name)
 
 
@@ -126,7 +122,7 @@ def is_current_page_video() -> bool:
         return False
 
 
-def get_current_media_info() -> tuple[str, str]:
+def get_current_media_info(split_pattern: str) -> tuple[str, str]:
     section = ""
     title = ""
     try:
@@ -134,11 +130,14 @@ def get_current_media_info() -> tuple[str, str]:
             EC.presence_of_element_located((By.XPATH, element_data["title"]))
         )
         info = element.get_attribute("aria-label")
-        section = info.split(", ", maxsplit=1)[0].replace(": ", " - ")
-        title = info.split(", ", maxsplit=1)[1].replace(": ", " - ")
-        print(section, title)
+        section = info.split(split_pattern, maxsplit=1)[0].replace(": ", " - ")
+        title = split_pattern[2:] + info.split(split_pattern, maxsplit=1)[1].replace(
+            ": ", " - "
+        )
+        print(f"{'Section':<8}: {section}\n{'Title':<8}: {title}")
         return section, title
     except Exception:
+        traceback.print_exc()
         print("Unable to find media title.")
         return section, title
 
@@ -175,7 +174,7 @@ def is_media_ended() -> bool:
         print("Media has ended.")
         return True
     except Exception:
-        print("Media is playing...")
+        # print("Media is playing...")
         return False
 
 
@@ -193,24 +192,29 @@ if __name__ == "__main__":
     load_dotenv()
     driver = attach_chromedriver()
     obs_cl = connect_obs_socket()
-    create_output_dir()
-    create_section_folder()
+    create_output_dir(get_title())
+    set_output_dir(get_title())
     while True:
         if is_current_page_video():
-            section, title = get_current_media_info()
-            set_output_dir(section)
-            set_output_filename(title)
+            section, title = get_current_media_info(", Lecture")
+            if "Section 16" in section:
+                print("Stop process at Section 16.")
+                break
+            set_output_filename(f"{section} / {title}")
             if not is_media_paused():
                 send_spacebar()  # pause
-            restart_media()
+            # restart_media()
             time.sleep(0.5)
             ActionChains(driver).move_by_offset(100, 100).perform()
             time.sleep(3)
             obs_cl.start_record()
+            print("Recording started...")
             send_spacebar()  # play
+            print("Media is playing...")
             while not is_media_ended():
                 time.sleep(0.5)
             obs_cl.stop_record()
+            print("Recording stopped.")
         right_button = is_next_right_button_exist()
         if right_button[0]:
             right_button[1].click()

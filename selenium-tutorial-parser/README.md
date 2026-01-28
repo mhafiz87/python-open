@@ -1,16 +1,28 @@
 # Selenium Tutorial Parser
 
+## Chrome Setup
+
 1. Add chrome path to environment variables. Then refresh current terminal environment variables or open new terminal.
 
-    ```powershell
-    [System.Environment]::SetEnvironmentVariable('path', "C:\Program Files\Google\Chrome\Application;" + [System.Environment]::GetEnvironmentVariable('path', "User"),"User")
-    ```
+   ```powershell
+   [System.Environment]::SetEnvironmentVariable('path', "C:\Program Files\Google\Chrome\Application;" + [System.Environment]::GetEnvironmentVariable('path', "User"),"User")
+   ```
 
 2. Launch browser with remote debugging.
 
-    ```powershell
-    chrome --remote-debugging-port=9222
-    ```
+   ```powershell
+   chrome --remote-debugging-port=9222 --user-data-dir="$HOME/temp/chrome_profile"
+   ```
+
+3. Login into website and go into the target url.
+
+## OBS Setup
+
+1. Enable `OBS` with Web Socket Server enable.
+   1.1 Tools > Web Socket Server Settings
+   1.2 Enable Web Socket Server
+   1.3 Show connect info to get password
+   1.4 Store port and password in `.env` file
 
 ## References
 
