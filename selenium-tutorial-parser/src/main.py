@@ -28,8 +28,9 @@ element_data = {
     "rewind_button": r'//button[@data-purpose = "rewind-skip-button"]',
     "video_class": r'//video[@class = "video-player--video-player--HiAnq"]',
 }
-# root_output_dir = Path(__file__).parent / "output"
-root_output_dir = Path("/home/autouser/output")
+
+root_output_dir = Path(__file__).parent / "output"
+# root_output_dir = Path("/home/autouser/output")
 
 
 def attach_chromedriver() -> ChromiumDriver:
@@ -200,10 +201,10 @@ if __name__ == "__main__":
             if "Section 16" in section:
                 print("Stop process at Section 16.")
                 break
-            set_output_filename(f"{section} / {title}")
+            set_output_filename(f"{section}/{title}")
             if not is_media_paused():
                 send_spacebar()  # pause
-            # restart_media()
+            restart_media()
             time.sleep(0.5)
             ActionChains(driver).move_by_offset(100, 100).perform()
             time.sleep(3)
@@ -215,6 +216,7 @@ if __name__ == "__main__":
                 time.sleep(0.5)
             obs_cl.stop_record()
             print("Recording stopped.")
+            time.sleep(0.5)
         right_button = is_next_right_button_exist()
         if right_button[0]:
             right_button[1].click()
