@@ -167,6 +167,18 @@ def is_media_paused() -> bool:
         return False
 
 
+def is_media_playing() -> bool:
+    try:
+        WebDriverWait(driver, 2).until(
+            EC.presence_of_element_located((By.XPATH, element_data["pause_button"]))
+        )
+        print("Media is playing.")
+        return True
+    except Exception:
+        print("Media is paused.")
+        return False
+
+
 def is_media_ended() -> bool:
     try:
         WebDriverWait(driver, 2).until(
@@ -177,6 +189,24 @@ def is_media_ended() -> bool:
     except Exception:
         # print("Media is playing...")
         return False
+
+
+def show_time_position(clear_line: bool = True) -> None:
+    LINE_UP = "\033[1A"
+    LINE_CLEAR = "\x1b[2K"
+    try:
+        element = WebDriverWait(driver, 0.5).until(
+            EC.presence_of_element_located((By.XPATH, element_data["video_class"]))
+        )
+        current_time = driver.execute_script(
+            "return arguments[0].currentTime;", element
+        )
+        duration = driver.execute_script("return arguments[0].duration;", element)
+        if clear_line:
+            print(LINE_UP, end=LINE_CLEAR)
+        print(f"Current Time: {current_time} / {duration}")
+    except Exception:
+        print("Unable to get time position.")
 
 
 def restart_media() -> None:
@@ -190,29 +220,38 @@ def restart_media() -> None:
 
 
 if __name__ == "__main__":
+    new_media = True
     load_dotenv()
     driver = attach_chromedriver()
     obs_cl = connect_obs_socket()
+    print("Title:", get_title())
     create_output_dir(get_title())
     set_output_dir(get_title())
     while True:
         if is_current_page_video():
             section, title = get_current_media_info(", Lecture")
-            if "Section 16" in section:
+            if "Section 8" in section:
                 print("Stop process at Section 16.")
                 break
             set_output_filename(f"{section}/{title}")
             if not is_media_paused():
                 send_spacebar()  # pause
-            restart_media()
             time.sleep(0.5)
             ActionChains(driver).move_by_offset(100, 100).perform()
             time.sleep(3)
-            obs_cl.start_record()
-            print("Recording started...")
             send_spacebar()  # play
             print("Media is playing...")
+            time.sleep(3)
+            if not is_media_playing():
+                print("Media is paused, resuming...")
+                send_spacebar()  # play
+                print("Media is playing...")
+            restart_media()
+            obs_cl.start_record()
+            print("Recording started...")
             while not is_media_ended():
+                show_time_position(clear_line=not new_media)
+                new_media = False
                 time.sleep(0.5)
             obs_cl.stop_record()
             print("Recording stopped.")
@@ -220,6 +259,8 @@ if __name__ == "__main__":
         right_button = is_next_right_button_exist()
         if right_button[0]:
             right_button[1].click()
+            new_media = True
+            time.sleep(10)
         else:
             break
     print("Done")
