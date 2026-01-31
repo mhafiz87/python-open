@@ -268,9 +268,15 @@ if __name__ == "__main__":
                 obs_cl.stop_record()
                 print("Recording stopped.")
                 time.sleep(0.5)
+            else:
+                print(
+                    f"Skipping section '{current_section}' as it is not in the "
+                    "specified list."
+                )
         right_button = is_next_right_button_exist()
         if right_button[0]:
             right_button[1].click()
+            print("Navigated to next media.")
             new_media = True
             time.sleep(10)
         else:
