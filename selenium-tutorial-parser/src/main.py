@@ -1,6 +1,7 @@
 # ruff: noqa: F401
 
 import os
+import re
 import time
 import traceback
 from pathlib import Path
@@ -220,6 +221,8 @@ def restart_media() -> None:
 
 
 if __name__ == "__main__":
+    pattern = r"(Section \d{1,2})"
+    sections = ("Section 2", "Section 3", "Section 4", "Section 8", "Section 11")
     new_media = True
     load_dotenv()
     driver = attach_chromedriver()
@@ -230,32 +233,41 @@ if __name__ == "__main__":
     while True:
         if is_current_page_video():
             section, title = get_current_media_info(", Lecture")
-            if "Section 8" in section:
-                print("Stop process at Section 16.")
+            check = re.search(pattern, section)
+            if check:
+                current_section = check.group(1)
+                print(f"Current section: {current_section}")
+            else:
+                print("Unable to determine section number.")
                 break
-            set_output_filename(f"{section}/{title}")
-            if not is_media_paused():
-                send_spacebar()  # pause
-            time.sleep(0.5)
-            ActionChains(driver).move_by_offset(100, 100).perform()
-            time.sleep(3)
-            send_spacebar()  # play
-            print("Media is playing...")
-            time.sleep(3)
-            if not is_media_playing():
-                print("Media is paused, resuming...")
+            if current_section in sections:
+                # To stop at specific section
+                # if "Section 6" in section:
+                #     print("Stop process at Section 16.")
+                #     break
+                set_output_filename(f"{section}/{title}")
+                if not is_media_paused():
+                    send_spacebar()  # pause
+                time.sleep(0.5)
+                ActionChains(driver).move_by_offset(100, 100).perform()
+                time.sleep(3)
                 send_spacebar()  # play
                 print("Media is playing...")
-            restart_media()
-            obs_cl.start_record()
-            print("Recording started...")
-            while not is_media_ended():
-                show_time_position(clear_line=not new_media)
-                new_media = False
+                time.sleep(3)
+                if not is_media_playing():
+                    print("Media is paused, resuming...")
+                    send_spacebar()  # play
+                    print("Media is playing...")
+                restart_media()
+                obs_cl.start_record()
+                print("Recording started...")
+                while not is_media_ended():
+                    show_time_position(clear_line=not new_media)
+                    new_media = False
+                    time.sleep(0.5)
+                obs_cl.stop_record()
+                print("Recording stopped.")
                 time.sleep(0.5)
-            obs_cl.stop_record()
-            print("Recording stopped.")
-            time.sleep(0.5)
         right_button = is_next_right_button_exist()
         if right_button[0]:
             right_button[1].click()
