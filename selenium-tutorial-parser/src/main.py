@@ -4,10 +4,12 @@ import os
 import re
 import time
 import traceback
+from dataclasses import asdict
 from pathlib import Path
 
 import obsws_python as obs
 from dotenv import load_dotenv
+from obsws_python.error import OBSSDKRequestError
 from selenium import webdriver
 from selenium.webdriver import ActionChains
 from selenium.webdriver.chrome.options import Options
@@ -17,6 +19,8 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
+
+load_dotenv()
 
 current_section: str = ""
 element_data = {
@@ -30,7 +34,9 @@ element_data = {
     "video_class": r'//video[@class = "video-player--video-player--HiAnq"]',
 }
 
-root_output_dir = Path(__file__).parent / "output"
+
+root_output_dir = Path("D:/_u")
+# root_output_dir = Path(__file__).parent / "output"
 # root_output_dir = Path("/home/autouser/output")
 
 
@@ -103,9 +109,8 @@ def create_section_folder() -> None:
 
 
 def set_output_dir(name: str) -> None:
-    dir = root_output_dir / name
-    print(f"Setting output directory to: {dir.as_posix()}")
-    obs_cl.set_profile_parameter("SimpleOutput", "FilePath", dir.as_posix())
+    print(f"Setting output directory to: {name}")
+    obs_cl.set_profile_parameter("SimpleOutput", "FilePath", name)
 
 
 def set_output_filename(name: str) -> None:
@@ -118,6 +123,7 @@ def is_current_page_video() -> bool:
         element = WebDriverWait(driver, 2).until(
             EC.presence_of_element_located((By.XPATH, element_data["video_class"]))
         )
+        # Move mouse to make UI invisible
         ActionChains(driver).move_to_element(element).perform()
         return True
     except Exception:
@@ -222,14 +228,18 @@ def restart_media() -> None:
 
 if __name__ == "__main__":
     pattern = r"(Section \d{1,2})"
-    sections = ("Section 2", "Section 3", "Section 4", "Section 8", "Section 11")
+    sections = (
+        "Section 2",
+        "Section 3",
+        "Section 4",
+        "Section 8",
+        "Section 11",
+        "Section 16",
+    )
     new_media = True
-    load_dotenv()
     driver = attach_chromedriver()
     obs_cl = connect_obs_socket()
     print("Title:", get_title())
-    create_output_dir(get_title())
-    set_output_dir(get_title())
     while True:
         if is_current_page_video():
             section, title = get_current_media_info(", Lecture")
@@ -246,9 +256,23 @@ if __name__ == "__main__":
                 #     print("Stop process at Section 16.")
                 #     break
                 set_output_filename(f"{section}/{title}")
+                # print( obs_cl.get_profile_parameter( "Output", "FilenameFormatting").__dict__.keys())
+                # print( obs_cl.get_profile_parameter( "SimpleOutput", "FilePath").parameter_value)
+                # print( obs_cl.get_profile_parameter( "Output", "FilenameFormatting").parameter_value)
+                filename = obs_cl.get_profile_parameter(
+                    "Output", "FilenameFormatting"
+                ).parameter_value
+                output_dir = root_output_dir / section
+                # print(Path(output_dir).parent.as_posix())
+                Path(output_dir).parent.mkdir(parents=True, exist_ok=True)
+                # print(os.path.exists(output_dir.parent.as_posix()))
+                # print(os.access(output_dir.parent.as_posix(), os.W_OK))
+                create_output_dir(output_dir.parent.as_posix())
+                set_output_dir(output_dir.parent.as_posix())
                 if not is_media_paused():
                     send_spacebar()  # pause
                 time.sleep(0.5)
+                # Move mouse to make UI invisible
                 ActionChains(driver).move_by_offset(100, 100).perform()
                 time.sleep(3)
                 send_spacebar()  # play
@@ -264,7 +288,7 @@ if __name__ == "__main__":
                 while not is_media_ended():
                     show_time_position(clear_line=not new_media)
                     new_media = False
-                    time.sleep(0.5)
+                    # time.sleep(0.5)
                 obs_cl.stop_record()
                 print("Recording stopped.")
                 time.sleep(0.5)
