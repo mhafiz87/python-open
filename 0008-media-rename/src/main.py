@@ -1,4 +1,5 @@
 # ruff: noqa: F401
+import re
 from datetime import datetime
 from pathlib import Path
 
@@ -6,6 +7,7 @@ import ffmpeg
 from PIL import Image
 from PIL.ExifTags import TAGS
 
+pattern = r"^\d{8}_\d{6}.*"
 media_dir = Path(__file__).parent.parent / "media_files"
 img_suffix = (".jpg", ".jpeg", ".png", ".gif")
 video_suffix = (".mp4", ".mov", ".mkv", ".avi", ".wmv", ".flv")
@@ -20,6 +22,9 @@ for file_path in files_list:
     file_extension = file_path.suffix.lower()
     if file_extension in img_suffix:
         media = Path(file_path)
+        if re.match(pattern, media.stem):
+            print(f"{media.stem} already renamed")
+            continue
         with Image.open(media) as image:
             exif = image._getexif()
             for tag, value in exif.items():
@@ -53,6 +58,9 @@ for file_path in files_list:
 
     elif file_extension in video_suffix:
         media = Path(file_path)
+        if re.match(pattern, media.stem):
+            print(f"{media.stem} already renamed")
+            continue
         probe = ffmpeg.probe(file_path)
         for stream in probe["streams"]:
             if stream["codec_type"] == "video":
