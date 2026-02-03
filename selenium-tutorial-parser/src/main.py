@@ -95,9 +95,13 @@ def get_current_media_info(split_pattern: tuple[str]) -> tuple[str, str]:
         )
         info = element.get_attribute("aria-label")
         for item in split_pattern:
-            if item in info.replace(": ", " - "):
+            if item in info.replace(": ", " - ").replace("/", ","):
                 section = item
-                title = info.split(", ", maxsplit=1)[1].replace(": ", " - ")
+                title = (
+                    info.split(", ", maxsplit=1)[1]
+                    .replace(": ", " - ")
+                    .replace("/", ",")
+                )
         # print(f"{'Section':<8}: {section}\n{'Title':<8}: {title}")
         return section, title
     except Exception:
@@ -263,11 +267,10 @@ if __name__ == "__main__":
             filename = obs_cl.get_profile_parameter(
                 "Output", "FilenameFormatting"
             ).parameter_value
-            output_dir = Path(root_output_dir / section)
             Path(root_output_dir / get_course_name()).mkdir(parents=True, exist_ok=True)
-            Path(output_dir).mkdir(parents=True, exist_ok=True)
-            create_output_dir(output_dir.as_posix())
-            set_output_dir(output_dir.as_posix())
+            root_output_dir.mkdir(parents=True, exist_ok=True)
+            create_output_dir(root_output_dir.as_posix())
+            set_output_dir(root_output_dir.as_posix())
             if not is_media_paused():
                 send_spacebar()  # pause
             time.sleep(0.5)
