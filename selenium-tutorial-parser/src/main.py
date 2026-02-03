@@ -207,6 +207,33 @@ def is_media_ended() -> bool:
         return False
 
 
+def seconds_to_time(seconds, precision=2):
+    """
+    Convert seconds to formatted HH:MM:SS string with customizable decimal precision.
+
+    Args:
+        seconds (float): Time in seconds
+        precision (int): Number of decimal places (default: 6)
+
+    Returns:
+        str: Formatted time string in HH:MM:SS.xxxxxx format
+    """
+    hours = int(seconds // 3600)
+    remaining = seconds % 3600
+    minutes = int(remaining // 60)
+    remaining_seconds = remaining % 60
+
+    # Calculate width for seconds (2 digits + decimal point + precision)
+    sec_width = 3 + precision if precision > 0 else 2
+
+    if precision > 0:
+        return (
+            f"{hours:02d}:{minutes:02d}:{remaining_seconds:0{sec_width}.{precision}f}"
+        )
+    else:
+        return f"{hours:02d}:{minutes:02d}:{int(remaining_seconds):02d}"
+
+
 def show_time_position(clear_line: bool = True) -> None:
     LINE_UP = "\033[1A"
     LINE_CLEAR = "\x1b[2K"
@@ -220,7 +247,10 @@ def show_time_position(clear_line: bool = True) -> None:
         duration = driver.execute_script("return arguments[0].duration;", element)
         if clear_line:
             print(LINE_UP, end=LINE_CLEAR)
-        print(f"Current Time: {current_time} / {duration}")
+        print(
+            f"Current Time: {seconds_to_time(current_time)} / "
+            f"{seconds_to_time(duration)}"
+        )
     except Exception:
         print("Unable to get time position.")
 
