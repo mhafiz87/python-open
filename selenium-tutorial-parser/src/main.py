@@ -234,7 +234,7 @@ def seconds_to_time(seconds, precision=2):
         return f"{hours:02d}:{minutes:02d}:{int(remaining_seconds):02d}"
 
 
-def show_time_position(clear_line: bool = True) -> None:
+def show_time_position(clear_line: bool = True) -> bool:
     LINE_UP = "\033[1A"
     LINE_CLEAR = "\x1b[2K"
     try:
@@ -251,8 +251,10 @@ def show_time_position(clear_line: bool = True) -> None:
             f"Current Time: {seconds_to_time(current_time)} / "
             f"{seconds_to_time(duration)}"
         )
+        return True
     except Exception:
         print("Unable to get time position.")
+        return False
 
 
 def restart_media() -> None:
@@ -318,7 +320,8 @@ if __name__ == "__main__":
             obs_cl.start_record()
             print("Recording started...")
             while not is_media_ended():
-                show_time_position(clear_line=not new_media)
+                if not show_time_position(clear_line=not new_media):
+                    break
                 new_media = False
             obs_cl.stop_record()
             print("Recording stopped.")
