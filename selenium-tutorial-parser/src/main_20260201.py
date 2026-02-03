@@ -32,12 +32,10 @@ element_data = {
     "goto_next_right_button": r'//div[@data-purpose = "go-to-next"]',
     "rewind_button": r'//button[@data-purpose = "rewind-skip-button"]',
     "video_class": r'//video[@class = "video-player--video-player--HiAnq"]',
-    "fullscreen_button": r'//button[@aria-label = "Fullscreen"]',
-    "exit_fullscreen_button": r'//button[@aria-label = "Exit fullscreen"]',
 }
 
 
-root_output_dir = Path("C:/_u")
+root_output_dir = Path("D:/_u")
 # root_output_dir = Path(__file__).parent / "output"
 # root_output_dir = Path("/home/autouser/output")
 
@@ -113,7 +111,7 @@ def create_output_dir(title: str = "") -> None:
         output = root_output_dir / title
     if not output.is_dir():
         output.mkdir(parents=True, exist_ok=True)
-    print(f"Created output directory: {root_output_dir}")
+    print(f"Created directory: {root_output_dir}")
 
 
 def set_output_dir(name: str) -> None:
@@ -136,23 +134,6 @@ def is_current_page_video() -> bool:
         return True
     except Exception:
         return False
-
-
-def is_fullscreen() -> tuple[bool, WebElement | None]:
-    try:
-        element = WebDriverWait(driver, 2).until(
-            EC.presence_of_element_located(
-                (By.XPATH, element_data["exit_fullscreen_button"])
-            )
-        )
-        return (True, element)
-    except Exception:
-        element = WebDriverWait(driver, 2).until(
-            EC.presence_of_element_located(
-                (By.XPATH, element_data["fullscreen_button"])
-            )
-        )
-        return (False, element)
 
 
 def is_next_right_button_exist() -> tuple[bool, WebElement | None]:
@@ -207,7 +188,7 @@ def show_time_position(clear_line: bool = True) -> None:
     LINE_UP = "\033[1A"
     LINE_CLEAR = "\x1b[2K"
     try:
-        element = WebDriverWait(driver, 0.25).until(
+        element = WebDriverWait(driver, 0.5).until(
             EC.presence_of_element_located((By.XPATH, element_data["video_class"]))
         )
         current_time = driver.execute_script(
@@ -227,71 +208,86 @@ def restart_media() -> None:
             EC.presence_of_element_located((By.XPATH, element_data["video_class"]))
         )
         driver.execute_script("arguments[0].currentTime = 0;", element)
-        print("Media has been restarted.")
     except Exception:
         print("Unable to restart media.")
 
 
 if __name__ == "__main__":
+    pattern = r"(Section \d{1,2})"
+    sections = (
+        "Section 2",
+        "Section 3",
+        "Section 4",
+        "Section 8",
+        "Section 11",
+        "Section 16",
+    )
     new_media = True
     driver = attach_chromedriver()
     obs_cl = connect_obs_socket()
     course = get_course_name()
     sections = get_sections()
-    section_to_skip: tuple[str, ...] = ()
     print("Course name:", course)
     print("Sections:", sections)
     print("Current media info:", get_current_media_info(sections))
-    print(get_current_media_info(sections))
-    # fullscreen_status, fullscreen_element = is_fullscreen()
-    # if not fullscreen_status:
-    #     fullscreen_element.click()
+    exit()
     while True:
         if is_current_page_video():
             section, title = get_current_media_info(sections)
-            if section in section_to_skip:
-                print(f"Skip section: {section}")
-                continue
-            # To stop at specific section
-            # if "Section 6" in section:
-            #     print("Stop process at Section 16.")
-            #     break
-            set_output_filename(f"{section}/{title}")
-            # print( obs_cl.get_profile_parameter( "Output", "FilenameFormatting").__dict__.keys())
-            # print( obs_cl.get_profile_parameter( "SimpleOutput", "FilePath").parameter_value)
-            # print( obs_cl.get_profile_parameter( "Output", "FilenameFormatting").parameter_value)
-            filename = obs_cl.get_profile_parameter(
-                "Output", "FilenameFormatting"
-            ).parameter_value
-            output_dir = Path(root_output_dir / section)
-            Path(root_output_dir / get_course_name()).mkdir(parents=True, exist_ok=True)
-            Path(output_dir).mkdir(parents=True, exist_ok=True)
-            create_output_dir(output_dir.as_posix())
-            set_output_dir(output_dir.as_posix())
-            if not is_media_paused():
-                send_spacebar()  # pause
-            time.sleep(0.5)
-            # Move mouse to make UI invisible
-            ActionChains(driver).move_by_offset(100, 100).perform()
-            time.sleep(3)
-            send_spacebar()  # play
-            print("Media is playing...")
-            time.sleep(3)
-            if not is_media_playing():
-                print("Media is paused, resuming...")
+            check = re.search(pattern, section)
+            if check:
+                current_section = check.group(1)
+                print(f"Current section: {current_section}")
+            else:
+                print("Unable to determine section number.")
+                break
+            if current_section in sections:
+                # To stop at specific section
+                # if "Section 6" in section:
+                #     print("Stop process at Section 16.")
+                #     break
+                set_output_filename(f"{section}/{title}")
+                # print( obs_cl.get_profile_parameter( "Output", "FilenameFormatting").__dict__.keys())
+                # print( obs_cl.get_profile_parameter( "SimpleOutput", "FilePath").parameter_value)
+                # print( obs_cl.get_profile_parameter( "Output", "FilenameFormatting").parameter_value)
+                filename = obs_cl.get_profile_parameter(
+                    "Output", "FilenameFormatting"
+                ).parameter_value
+                output_dir = root_output_dir / section
+                # print(Path(output_dir).parent.as_posix())
+                Path(output_dir).parent.mkdir(parents=True, exist_ok=True)
+                # print(os.path.exists(output_dir.parent.as_posix()))
+                # print(os.access(output_dir.parent.as_posix(), os.W_OK))
+                create_output_dir(output_dir.parent.as_posix())
+                set_output_dir(output_dir.parent.as_posix())
+                if not is_media_paused():
+                    send_spacebar()  # pause
+                time.sleep(0.5)
+                # Move mouse to make UI invisible
+                ActionChains(driver).move_by_offset(100, 100).perform()
+                time.sleep(3)
                 send_spacebar()  # play
                 print("Media is playing...")
-            restart_media()
-            obs_cl.start_record()
-            print("Recording started...")
-            while not is_media_ended():
-                show_time_position(clear_line=not new_media)
-                new_media = False
-            obs_cl.stop_record()
-            print("Recording stopped.")
-            time.sleep(0.5)
-        else:
-            print("Current page is not video.")
+                time.sleep(3)
+                if not is_media_playing():
+                    print("Media is paused, resuming...")
+                    send_spacebar()  # play
+                    print("Media is playing...")
+                restart_media()
+                obs_cl.start_record()
+                print("Recording started...")
+                while not is_media_ended():
+                    show_time_position(clear_line=not new_media)
+                    new_media = False
+                    # time.sleep(0.5)
+                obs_cl.stop_record()
+                print("Recording stopped.")
+                time.sleep(0.5)
+            else:
+                print(
+                    f"Skipping section '{current_section}' as it is not in the "
+                    "specified list."
+                )
         right_button = is_next_right_button_exist()
         if right_button[0]:
             right_button[1].click()
