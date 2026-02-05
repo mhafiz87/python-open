@@ -51,6 +51,7 @@ uv self update
   - isort
 
 ```bash
+uv tool install pip@latest --python 3.13.11
 uv tool install ruff@latest --python 3.13.11
 uv tool install basedpyright@latest --python 3.13.11
 uv tool install debugpy@latest --python 3.13.11
@@ -137,6 +138,9 @@ uv tool uninstall ruff basedpyright git-cliff yamlfix refurb
   ```bash
   mkdir docs, src, tests
   touch LICENSE
+  cd src
+  mkdir __init__.py
+  mkdir main.py
   ```
 
 - Add dependency packages to project.
@@ -245,6 +249,27 @@ reportUnusedParameter = "none"
 reportUnusedVariable = "none"
 typeCheckingMode = "standard"
 ```
+## Download Packages For Offline Build
+
+- Create requirements.txt file
+
+  ```bash
+  # uv pip compile --group <group-name> --extra <optional-dependencies> pyproject.toml -o requirements.txt
+  uv  pip compile --group dev pyproject.toml -o requirements.txt
+  ```
+
+- Download wheel packages
+
+  ```bash
+  mkdir whl
+  pip download -r requirements.txt -d whl
+  ```
+
+- To install offline
+
+  ```bash
+  pip install --no-index --find-links whl -r requirements.txt
+  ```
 
 ## Keep In View
 
