@@ -5,6 +5,7 @@ import re
 import time
 import traceback
 from dataclasses import asdict
+from datetime import datetime
 from pathlib import Path
 
 import obsws_python as obs
@@ -20,7 +21,7 @@ from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 
-from logger import logger
+from logger import log_file_handler, logger
 
 load_dotenv()
 
@@ -273,9 +274,11 @@ def restart_media() -> None:
 
 
 if __name__ == "__main__":
+    timestamp = datetime.now().strftime("%Y%m%d_%H:%M:%S")
+    log_file_handler.write_header(f"Web Parser: Start At {timestamp}")
     new_media = True
     driver = attach_chromedriver()
-    exit()
+    log_file_handler.write_separator()
     obs_cl = connect_obs_socket()
     course = get_course_name()
     sections = get_sections()
