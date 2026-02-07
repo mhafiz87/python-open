@@ -40,7 +40,7 @@ element_data = {
 }
 
 
-root_output_dir = Path("C:/_u")
+root_output_dir = Path("D:/_u")
 # root_output_dir = Path(__file__).parent / "output"
 # root_output_dir = Path("/home/autouser/output")
 
@@ -262,15 +262,27 @@ def show_time_position(clear_line: bool = True) -> bool:
         return False
 
 
+def get_media_duration() -> str | None:
+    try:
+        element = WebDriverWait(driver, 0.5).until(
+            EC.presence_of_element_located((By.XPATH, element_data["video_class"]))
+        )
+        duration = driver.execute_script("return arguments[0].duration;", element)
+        return seconds_to_time(duration)
+    except Exception:
+        logger.error("Unable to get media duration.")
+        return None
+
+
 def restart_media() -> None:
     try:
         element = WebDriverWait(driver, 0.5).until(
             EC.presence_of_element_located((By.XPATH, element_data["video_class"]))
         )
         driver.execute_script("arguments[0].currentTime = 0;", element)
-        print("Media has been restarted.")
+        logger.info("Media has been restarted to the beginning.")
     except Exception:
-        print("Unable to restart media.")
+        logger.error("Unable to restart media.")
 
 
 if __name__ == "__main__":
@@ -278,7 +290,6 @@ if __name__ == "__main__":
     log_file_handler.write_header(f"Web Parser: Start At {timestamp}")
     new_media = True
     driver = attach_chromedriver()
-    log_file_handler.write_separator()
     obs_cl = connect_obs_socket()
     course = get_course_name()
     sections = get_sections()
@@ -311,6 +322,11 @@ if __name__ == "__main__":
             root_output_dir.mkdir(parents=True, exist_ok=True)
             create_output_dir(root_output_dir.as_posix())
             set_output_dir(root_output_dir.as_posix())
+            logger.info(
+                f"Output media to: {(root_output_dir / section / title).as_posix()}"
+            )
+            logger.info(f"Watching media: {section} - {title}")
+            logger.info(f"Media duration: {get_media_duration()}")
             if not is_media_paused():
                 send_spacebar()  # pause
             time.sleep(0.5)
@@ -326,22 +342,23 @@ if __name__ == "__main__":
                 print("Media is playing...")
             restart_media()
             obs_cl.start_record()
-            print("Recording started...")
+            logger.info("Recording started.")
             while not is_media_ended():
                 if not show_time_position(clear_line=not new_media):
                     break
                 new_media = False
             obs_cl.stop_record()
-            print("Recording stopped.")
+            logger.info("Recording stopped.")
             time.sleep(0.5)
         else:
-            print("Current page is not video.")
+            logger.warning("Current page is not a video media.")
         right_button = is_next_right_button_exist()
         if right_button[0]:
             right_button[1].click()
-            print("Navigated to next media.")
+            logger.info("Navigated to next media.")
             new_media = True
             time.sleep(10)
         else:
             break
+    log_file_handler.write_separator()
     print("Done")
