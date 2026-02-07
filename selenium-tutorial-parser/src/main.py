@@ -20,6 +20,8 @@ from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 
+from logger import logger
+
 load_dotenv()
 
 current_section: str = ""
@@ -50,7 +52,9 @@ def attach_chromedriver() -> ChromiumDriver:
     options.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
     # options.add_experimental_option("detach", True)
     driver = webdriver.Chrome(options=options)
-    print(driver.current_url)
+    logger.info(
+        f"Attached to existing Chrome session. Current URL: \033[4;34m{driver.current_url}\033[0m"
+    )
     return driver
 
 
@@ -271,6 +275,7 @@ def restart_media() -> None:
 if __name__ == "__main__":
     new_media = True
     driver = attach_chromedriver()
+    exit()
     obs_cl = connect_obs_socket()
     course = get_course_name()
     sections = get_sections()
