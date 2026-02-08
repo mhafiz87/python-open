@@ -331,16 +331,23 @@ if __name__ == "__main__":
                 send_spacebar()  # pause
             time.sleep(0.5)
             # Move mouse to make UI invisible
-            ActionChains(driver).move_by_offset(100, 100).perform()
+            video_element = WebDriverWait(driver, 2).until(
+                EC.presence_of_element_located((By.XPATH, element_data["video_class"]))
+            )
+            ActionChains(driver).move_to_element(video_element).perform()
+            ActionChains(driver).move_by_offset(200, 200).perform()
             time.sleep(3)
             send_spacebar()  # play
             print("Media is playing...")
-            time.sleep(3)
             if not is_media_playing():
                 print("Media is paused, resuming...")
                 send_spacebar()  # play
                 print("Media is playing...")
+            ActionChains(driver).move_to_element(video_element).perform()
+            ActionChains(driver).move_by_offset(200, 200).perform()
+            time.sleep(3)
             restart_media()
+            exit()
             obs_cl.start_record()
             logger.info("Recording started.")
             while not is_media_ended():
