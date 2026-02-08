@@ -347,7 +347,6 @@ if __name__ == "__main__":
             ActionChains(driver).move_by_offset(200, 200).perform()
             time.sleep(3)
             restart_media()
-            exit()
             obs_cl.start_record()
             logger.info("Recording started.")
             while not is_media_ended():
