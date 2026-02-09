@@ -239,7 +239,7 @@ def seconds_to_time(seconds, precision=2):
         return f"{hours:02d}:{minutes:02d}:{int(remaining_seconds):02d}"
 
 
-def show_time_position(clear_line: bool = True) -> bool:
+def show_time_position(clear_line: bool = True) -> tuple[str, str]:
     LINE_UP = "\033[1A"
     LINE_CLEAR = "\x1b[2K"
     try:
@@ -256,10 +256,10 @@ def show_time_position(clear_line: bool = True) -> bool:
             f"Current Time: {seconds_to_time(current_time)} / "
             f"{seconds_to_time(duration)}"
         )
-        return True
+        return seconds_to_time(current_time), seconds_to_time(duration)
     except Exception:
         print("Unable to get time position.")
-        return False
+        return "", ""
 
 
 def get_media_duration() -> str | None:
@@ -349,8 +349,17 @@ if __name__ == "__main__":
             restart_media()
             obs_cl.start_record()
             logger.info("Recording started.")
+            old_current_time = ""
             while not is_media_ended():
-                if not show_time_position(clear_line=not new_media):
+                current_time, duration = show_time_position(clear_line=not new_media)
+                if current_time != old_current_time:
+                    old_current_time = current_time
+                else:
+                    # No change in time position, possibly stalled
+                    logger.warning(
+                        "Time position not changing, possible stall detected."
+                    )
+                    logger.warning(f"Stopping {section}, {title} due to stall.")
                     break
                 new_media = False
             obs_cl.stop_record()
