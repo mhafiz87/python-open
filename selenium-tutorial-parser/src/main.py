@@ -91,24 +91,31 @@ def get_sections() -> tuple[str]:
     return tuple(sections)
 
 
-def get_current_media_info(split_pattern: tuple[str]) -> tuple[str, str]:
+def get_current_media_info() -> tuple[str, str]:
     section = ""
     title = ""
+    section_pattern = r"^(Section \d{1,3}.*), (Lecture \d{1,3}.*).*"
     try:
         element = WebDriverWait(driver, 2).until(
             EC.presence_of_element_located((By.XPATH, element_data["title"]))
         )
         info = element.get_attribute("aria-label")
-        for item in split_pattern:
-            if item in info.replace(": ", " - ").replace("/", ","):
-                section = item
-                title = (
-                    info.split(", ", maxsplit=1)[1]
-                    .replace(": ", " - ")
-                    .replace("/", ",")
-                )
+        result = re.match(section_pattern, info)
+        for index, item in enumerate(result.groups()):
+            if index == 0:
+                section = item.replace(": ", " - ").replace("/", ",")
+            elif index == 1:
+                title = item.replace(": ", " - ").replace("/", ",")
+        # for item in split_pattern:
+        #     if item in info.replace(": ", " - ").replace("/", ","):
+        #         section = item
+        #         title = (
+        #             info.split(", Lecture", maxsplit=1)[1]
+        #             .replace(": ", " - ")
+        #             .replace("/", ",")
+        #         )
         # print(f"{'Section':<8}: {section}\n{'Title':<8}: {title}")
-        return section, title
+        return section, "Lecture" + title
     except Exception:
         traceback.print_exc()
         print("Unable to find media title.")
@@ -295,15 +302,16 @@ if __name__ == "__main__":
     sections = get_sections()
     section_to_skip: tuple[str, ...] = ()
     print("Course name:", course)
-    print("Sections:", sections)
-    print("Current media info:", get_current_media_info(sections))
-    print(get_current_media_info(sections))
+    # print("Sections:", sections)
+    # for section in sections:
+    #     print(section)
+    print("Current media info:", get_current_media_info())
     # fullscreen_status, fullscreen_element = is_fullscreen()
     # if not fullscreen_status:
     #     fullscreen_element.click()
     while True:
         if is_current_page_video():
-            section, title = get_current_media_info(sections)
+            section, title = get_current_media_info()
             if section in section_to_skip:
                 print(f"Skip section: {section}")
                 continue
@@ -327,6 +335,7 @@ if __name__ == "__main__":
             )
             logger.info(f"Watching media: {section} - {title}")
             logger.info(f"Media duration: {get_media_duration()}")
+            exit()
             if not is_media_paused():
                 send_spacebar()  # pause
             time.sleep(0.5)
