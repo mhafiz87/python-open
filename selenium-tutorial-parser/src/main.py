@@ -294,7 +294,7 @@ def restart_media() -> None:
         logger.error("Unable to restart media.")
 
 
-def save_text_content(title: str) -> None:
+def save_text_content(output: str) -> None:
     try:
         element = WebDriverWait(driver, 2).until(
             EC.presence_of_element_located(
@@ -307,7 +307,7 @@ def save_text_content(title: str) -> None:
         <html>
         <head>
             <meta charset="UTF-8">
-            <title>{title}</title>
+            <title>{output.split("/")[-1]}</title>
         </head>
         <body>
             {inner_html}
@@ -411,7 +411,7 @@ if __name__ == "__main__":
         else:
             logger.warning("Current page is not a video media.")
             try:
-                save_text_content(title=(root_output_dir / section / title).as_posix())
+                save_text_content(output=(root_output_dir / section / title).as_posix())
             except Exception:
                 logger.error("Failed to save text content.")
                 logger.error(traceback.format_exc())
