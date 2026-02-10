@@ -300,7 +300,8 @@ if __name__ == "__main__":
     obs_cl = connect_obs_socket()
     course = get_course_name()
     sections = get_sections()
-    section_to_skip: tuple[str, ...] = ()
+    section_to_focus: tuple[str, ...] = ("Section 15", "Section 16", "Section 28")
+    section_to_stop: tuple[str, ...] = ()
     print("Course name:", course)
     # print("Sections:", sections)
     # for section in sections:
@@ -312,68 +313,73 @@ if __name__ == "__main__":
     while True:
         if is_current_page_video():
             section, title = get_current_media_info()
-            if section in section_to_skip:
-                print(f"Skip section: {section}")
-                continue
             # To stop at specific section
-            # if "Section 6" in section:
-            #     print("Stop process at Section 16.")
-            #     break
-            set_output_filename(f"{section}/{title}")
-            # print( obs_cl.get_profile_parameter( "Output", "FilenameFormatting").__dict__.keys())
-            # print( obs_cl.get_profile_parameter( "SimpleOutput", "FilePath").parameter_value)
-            # print( obs_cl.get_profile_parameter( "Output", "FilenameFormatting").parameter_value)
-            filename = obs_cl.get_profile_parameter(
-                "Output", "FilenameFormatting"
-            ).parameter_value
-            Path(root_output_dir / get_course_name()).mkdir(parents=True, exist_ok=True)
-            root_output_dir.mkdir(parents=True, exist_ok=True)
-            create_output_dir(root_output_dir.as_posix())
-            set_output_dir(root_output_dir.as_posix())
-            logger.info(
-                f"Output media to: {(root_output_dir / section / title).as_posix()}"
-            )
-            logger.info(f"Watching media: {section} - {title}")
-            logger.info(f"Media duration: {get_media_duration()}")
-            exit()
-            if not is_media_paused():
-                send_spacebar()  # pause
-            time.sleep(0.5)
-            # Move mouse to make UI invisible
-            video_element = WebDriverWait(driver, 2).until(
-                EC.presence_of_element_located((By.XPATH, element_data["video_class"]))
-            )
-            ActionChains(driver).move_to_element(video_element).perform()
-            ActionChains(driver).move_by_offset(200, 200).perform()
-            time.sleep(3)
-            send_spacebar()  # play
-            print("Media is playing...")
-            if not is_media_playing():
-                print("Media is paused, resuming...")
+            if section_to_stop and section[:10] in section_to_stop:
+                print("Stop process at Section 16.")
+                break
+            if section[:10] in section_to_focus or not section_to_focus:
+                set_output_filename(f"{section}/{title}")
+                # print( obs_cl.get_profile_parameter( "Output", "FilenameFormatting").__dict__.keys())
+                # print( obs_cl.get_profile_parameter( "SimpleOutput", "FilePath").parameter_value)
+                # print( obs_cl.get_profile_parameter( "Output", "FilenameFormatting").parameter_value)
+                filename = obs_cl.get_profile_parameter(
+                    "Output", "FilenameFormatting"
+                ).parameter_value
+                Path(root_output_dir / get_course_name()).mkdir(
+                    parents=True, exist_ok=True
+                )
+                root_output_dir.mkdir(parents=True, exist_ok=True)
+                create_output_dir(root_output_dir.as_posix())
+                set_output_dir(root_output_dir.as_posix())
+                logger.info(
+                    f"Output media to: {(root_output_dir / section / title).as_posix()}"
+                )
+                logger.info(f"Watching media: {section} - {title}")
+                logger.info(f"Media duration: {get_media_duration()}")
+                if not is_media_paused():
+                    send_spacebar()  # pause
+                time.sleep(0.5)
+                # Move mouse to make UI invisible
+                video_element = WebDriverWait(driver, 2).until(
+                    EC.presence_of_element_located(
+                        (By.XPATH, element_data["video_class"])
+                    )
+                )
+                ActionChains(driver).move_to_element(video_element).perform()
+                ActionChains(driver).move_by_offset(200, 200).perform()
+                time.sleep(3)
                 send_spacebar()  # play
                 print("Media is playing...")
-            ActionChains(driver).move_to_element(video_element).perform()
-            ActionChains(driver).move_by_offset(200, 200).perform()
-            time.sleep(3)
-            restart_media()
-            obs_cl.start_record()
-            logger.info("Recording started.")
-            old_current_time = ""
-            while not is_media_ended():
-                current_time, duration = show_time_position(clear_line=not new_media)
-                if current_time != old_current_time:
-                    old_current_time = current_time
-                else:
-                    # No change in time position, possibly stalled
-                    logger.warning(
-                        "Time position not changing, possible stall detected."
+                if not is_media_playing():
+                    print("Media is paused, resuming...")
+                    send_spacebar()  # play
+                    print("Media is playing...")
+                ActionChains(driver).move_to_element(video_element).perform()
+                ActionChains(driver).move_by_offset(200, 200).perform()
+                time.sleep(3)
+                restart_media()
+                obs_cl.start_record()
+                logger.info("Recording started.")
+                old_current_time = ""
+                while not is_media_ended():
+                    current_time, duration = show_time_position(
+                        clear_line=not new_media
                     )
-                    logger.warning(f"Stopping {section}, {title} due to stall.")
-                    break
-                new_media = False
-            obs_cl.stop_record()
-            logger.info("Recording stopped.")
-            time.sleep(0.5)
+                    if current_time != old_current_time:
+                        old_current_time = current_time
+                    else:
+                        # No change in time position, possibly stalled
+                        logger.warning(
+                            "Time position not changing, possible stall detected."
+                        )
+                        logger.warning(f"Stopping {section}, {title} due to stall.")
+                        break
+                    new_media = False
+                obs_cl.stop_record()
+                logger.info("Recording stopped.")
+                time.sleep(0.5)
+            else:
+                logger.info(f"Skip section: {section}")
         else:
             logger.warning("Current page is not a video media.")
         right_button = is_next_right_button_exist()
