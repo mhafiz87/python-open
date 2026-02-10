@@ -38,6 +38,7 @@ element_data = {
     "video_class": r'//video[@class = "video-player--video-player--HiAnq"]',
     "fullscreen_button": r'//button[@aria-label = "Fullscreen"]',
     "exit_fullscreen_button": r'//button[@aria-label = "Exit fullscreen"]',
+    "text_viewer_class": r'//div[@data-purpose = "safely-set-inner-html:rich-text-viewer:html"]',
 }
 
 
@@ -104,9 +105,9 @@ def get_current_media_info() -> tuple[str, str]:
         result = re.match(section_pattern, info)
         for index, item in enumerate(result.groups()):
             if index == 0:
-                section = item.replace(": ", " - ").replace("/", ",")
+                section = item.replace(": ", " - ").replace("/", ",").replace("!", "")
             elif index == 1:
-                title = item.replace(": ", " - ").replace("/", ",")
+                title = item.replace(": ", " - ").replace("/", ",").replace("!", "")
         # for item in split_pattern:
         #     if item in info.replace(": ", " - ").replace("/", ","):
         #         section = item
@@ -293,6 +294,36 @@ def restart_media() -> None:
         logger.error("Unable to restart media.")
 
 
+def save_text_content(title: str) -> None:
+    try:
+        element = WebDriverWait(driver, 2).until(
+            EC.presence_of_element_located(
+                (By.XPATH, element_data["text_viewer_class"])
+            )
+        )
+        inner_html = element.get_attribute("innerHTML")
+        text_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>{title}</title>
+        </head>
+        <body>
+            {inner_html}
+        </body>
+        </html>
+        """
+        Path(title).parent.mkdir(parents=True, exist_ok=True)
+        with open(f"{title}.html", "w", encoding="utf-8") as f:
+            f.write(text_content)
+        logger.info(f"Saved text content to {title}.html")
+    except Exception as error:
+        # print(traceback.format_exc())
+        logger.error("Unable to save text content.")
+        logger.error(f"{type(error).__name__}: {error}")
+
+
 if __name__ == "__main__":
     timestamp = datetime.now().strftime("%Y%m%d_%H:%M:%S")
     log_file_handler.write_header(f"Web Parser: Start At {timestamp}")
@@ -309,8 +340,13 @@ if __name__ == "__main__":
     #     print(section)
     print("Current media info:", get_current_media_info())
     while True:
+        Path(root_output_dir / get_course_name()).mkdir(parents=True, exist_ok=True)
+        root_output_dir.mkdir(parents=True, exist_ok=True)
+        create_output_dir(root_output_dir.as_posix())
+        set_output_dir(root_output_dir.as_posix())
+        section, title = get_current_media_info()
+        print(section, title)
         if is_current_page_video():
-            section, title = get_current_media_info()
             # To stop at specific section
             if section_to_stop and section[:10] in section_to_stop:
                 print("Stop process at Section 16.")
@@ -323,12 +359,6 @@ if __name__ == "__main__":
                 filename = obs_cl.get_profile_parameter(
                     "Output", "FilenameFormatting"
                 ).parameter_value
-                Path(root_output_dir / get_course_name()).mkdir(
-                    parents=True, exist_ok=True
-                )
-                root_output_dir.mkdir(parents=True, exist_ok=True)
-                create_output_dir(root_output_dir.as_posix())
-                set_output_dir(root_output_dir.as_posix())
                 logger.info(
                     f"Output media to: {(root_output_dir / section / title).as_posix()}"
                 )
@@ -380,6 +410,11 @@ if __name__ == "__main__":
                 logger.info(f"Skip section: {section}")
         else:
             logger.warning("Current page is not a video media.")
+            try:
+                save_text_content(title=(root_output_dir / section / title).as_posix())
+            except Exception:
+                logger.error("Failed to save text content.")
+                logger.error(traceback.format_exc())
         right_button = is_next_right_button_exist()
         if right_button[0]:
             right_button[1].click()
