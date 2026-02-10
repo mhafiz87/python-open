@@ -341,6 +341,10 @@ if __name__ == "__main__":
     print("Current media info:", get_current_media_info())
     while True:
         Path(root_output_dir / get_course_name()).mkdir(parents=True, exist_ok=True)
+        logger.info(
+            "Create output directory for course: "
+            f"{Path(root_output_dir / get_course_name()).as_posix()}"
+        )
         root_output_dir.mkdir(parents=True, exist_ok=True)
         create_output_dir(root_output_dir.as_posix())
         set_output_dir(root_output_dir.as_posix())
@@ -413,8 +417,7 @@ if __name__ == "__main__":
             try:
                 save_text_content(output=(root_output_dir / section / title).as_posix())
             except Exception:
-                logger.error("Failed to save text content.")
-                logger.error(traceback.format_exc())
+                logger.error("This is not a text media. Skipping...")
         right_button = is_next_right_button_exist()
         if right_button[0]:
             right_button[1].click()
