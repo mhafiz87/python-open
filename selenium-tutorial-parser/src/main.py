@@ -1,3 +1,4 @@
+
 # ruff: noqa: F401
 
 import os
@@ -300,16 +301,13 @@ if __name__ == "__main__":
     obs_cl = connect_obs_socket()
     course = get_course_name()
     sections = get_sections()
-    section_to_focus: tuple[str, ...] = ("Section 19",)
+    section_to_focus: tuple[str, ...] = ()
     section_to_stop: tuple[str, ...] = ()
     print("Course name:", course)
     # print("Sections:", sections)
     # for section in sections:
     #     print(section)
     print("Current media info:", get_current_media_info())
-    # fullscreen_status, fullscreen_element = is_fullscreen()
-    # if not fullscreen_status:
-    #     fullscreen_element.click()
     while True:
         if is_current_page_video():
             section, title = get_current_media_info()
