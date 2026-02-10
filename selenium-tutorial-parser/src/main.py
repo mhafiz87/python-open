@@ -115,7 +115,7 @@ def get_current_media_info() -> tuple[str, str]:
         #             .replace("/", ",")
         #         )
         # print(f"{'Section':<8}: {section}\n{'Title':<8}: {title}")
-        return section, "Lecture" + title
+        return section, title
     except Exception:
         traceback.print_exc()
         print("Unable to find media title.")
@@ -300,7 +300,7 @@ if __name__ == "__main__":
     obs_cl = connect_obs_socket()
     course = get_course_name()
     sections = get_sections()
-    section_to_focus: tuple[str, ...] = ("Section 15", "Section 16", "Section 28")
+    section_to_focus: tuple[str, ...] = ("Section 19",)
     section_to_stop: tuple[str, ...] = ()
     print("Course name:", course)
     # print("Sections:", sections)
