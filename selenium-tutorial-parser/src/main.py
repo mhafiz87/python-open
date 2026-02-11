@@ -1,13 +1,13 @@
 """
 TODO: [ ] Detect if media is not in fullscreen and switch to fullscreen, then
           switch back after recording
-TODO: [ ] Check if there's a freeze frame in the video playback
+TODO: [x] Check if there's a freeze frame in the OBS recording
 TODO: [ ] Create a finally block to ensure OBS recording is stopped on error
 TODO: [ ] Add command line arguments for setting root output directory
 TODO: [ ] Add command line arguments for settingsections to focus/stop, etc
 """
 # ruff: noqa: F401
-
+import base64
 import os
 import re
 import time
@@ -16,9 +16,11 @@ from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 
+import numpy as np
 import obsws_python as obs
 from dotenv import load_dotenv
 from obsws_python.error import OBSSDKRequestError
+from PIL import Image
 from selenium import webdriver
 from selenium.webdriver import ActionChains
 from selenium.webdriver.chrome.options import Options
@@ -32,6 +34,11 @@ from selenium.webdriver.support.wait import WebDriverWait
 from logger import log_file_handler, logger
 
 load_dotenv()
+
+image_1_name = "debug_screenshot_1.png"
+image_2_name = "debug_screenshot_2.png"
+frame_check_interval = 10  # seconds
+frame_counter = 1
 
 current_section: str = ""
 element_data = {
@@ -76,6 +83,24 @@ def connect_obs_socket() -> obs.ReqClient:
         timeout=3,
     )
     return obs_cl
+
+
+def get_obs_screenshot(
+    client: obs.ReqClient, file_path: str, source_name: str = "chrome"
+) -> None:
+    screenshot = client.get_source_screenshot(
+        source_name, width=1920, height=1080, quality=100, img_format="png"
+    )
+    if screenshot:
+        # Remove the base64 prefix ("data:image/png;base64,")
+        base64_data = screenshot.image_data.split(",")[1]
+        image_bytes = base64.b64decode(base64_data)
+
+        with open(file_path, "wb") as f:
+            f.write(image_bytes)
+        print(f"Screenshot saved to {file_path}")
+    else:
+        print("Failed to take screenshot")
 
 
 def send_spacebar() -> None:
@@ -342,11 +367,12 @@ if __name__ == "__main__":
     sections = get_sections()
     section_to_focus: tuple[str, ...] = ()
     section_to_stop: tuple[str, ...] = ()
-    logger.info("Course name:", course)
+    logger.info(f"Course name: {course}")
     # print("Sections:", sections)
     # for section in sections:
     #     print(section)
-    logger.info("Current media info:", get_current_media_info())
+    logger.info(f"Current media info: {get_current_media_info()}")
+    # exit()
     while True:
         Path(root_output_dir / get_course_name()).mkdir(parents=True, exist_ok=True)
         logger.info(
@@ -401,6 +427,10 @@ if __name__ == "__main__":
                 obs_cl.start_record()
                 logger.info("Recording started.")
                 old_current_time = ""
+                frame_check_initial_time = time.monotonic()
+                # Check for frame freeze every frame_check_interval seconds or
+                # when time position does not change
+                get_obs_screenshot(obs_cl, image_2_name)
                 while not is_media_ended():
                     current_time, duration = show_time_position(
                         clear_line=not new_media
@@ -414,6 +444,35 @@ if __name__ == "__main__":
                         )
                         logger.warning(f"Stopping {section}, {title} due to stall.")
                         break
+                    frame_check_time = time.monotonic()
+                    if (
+                        frame_check_time - frame_check_initial_time
+                        >= frame_check_interval
+                    ):
+                        # Take screenshot for frame freeze detection
+                        if frame_counter % 2 == 1:
+                            get_obs_screenshot(obs_cl, image_1_name)
+                            frame_counter = 2
+                        else:
+                            get_obs_screenshot(obs_cl, image_2_name)
+                            frame_counter = 1
+                        print("Captured screenshot for frame freeze check.")
+                        img1 = Image.open(image_1_name)
+                        img2 = Image.open(image_2_name)
+                        img1_array = np.array(img1)
+                        img2_array = np.array(img2)
+                        freeze = np.array_equal(img1_array, img2_array)
+                        if freeze:
+                            logger.warning("Frame freeze detected in OBS.")
+                            logger.warning(
+                                f"Stopping {section}, {title} due to freeze."
+                            )
+                            logger.warning("Stopping process.")
+                            obs_cl.stop_record()
+                            exit()
+                        else:
+                            print("No frame freeze detected.")
+                        frame_check_initial_time = frame_check_time
                     new_media = False
                 obs_cl.stop_record()
                 logger.info("Recording stopped.")
