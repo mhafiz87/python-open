@@ -468,8 +468,6 @@ if __name__ == "__main__":
                             logger.warning("Stopping process.")
                             obs_cl.stop_record()
                             exit()
-                        else:
-                            print("No frame freeze detected.")
                         frame_check_initial_time = frame_check_time
                     new_media = False
                 obs_cl.stop_record()
