@@ -301,6 +301,7 @@ def save_text_content(output: str) -> None:
                 (By.XPATH, element_data["text_viewer_class"])
             )
         )
+        logger.info("Media contains text content. Saving...")
         inner_html = element.get_attribute("innerHTML")
         text_content = f"""
         <!DOCTYPE html>
@@ -314,10 +315,10 @@ def save_text_content(output: str) -> None:
         </body>
         </html>
         """
-        Path(title).parent.mkdir(parents=True, exist_ok=True)
-        with open(f"{title}.html", "w", encoding="utf-8") as f:
+        Path(output).parent.mkdir(parents=True, exist_ok=True)
+        with open(f"{output}.html", "w", encoding="utf-8") as f:
             f.write(text_content)
-        logger.info(f"Saved text content to {title}.html")
+        logger.info(f"Saved text content to {output}.html")
     except Exception as error:
         # print(traceback.format_exc())
         logger.error("Unable to save text content.")
