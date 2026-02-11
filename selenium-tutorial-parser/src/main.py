@@ -455,7 +455,6 @@ if __name__ == "__main__":
                         else:
                             get_obs_screenshot(obs_cl, image_2_name)
                             frame_counter = 1
-                        print("Captured screenshot for frame freeze check.")
                         img1 = Image.open(image_1_name)
                         img2 = Image.open(image_2_name)
                         img1_array = np.array(img1)
