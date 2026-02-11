@@ -136,9 +136,11 @@ def get_current_media_info() -> tuple[str, str]:
         result = re.match(section_pattern, info)
         for index, item in enumerate(result.groups()):
             if index == 0:
-                section = item.replace(": ", " - ").replace("/", ",").replace("!", "")
+                # section = item.replace(": ", " - ").replace("/", ",").replace("!", "")
+                section = re.sub(r"[^\w\s/-]", "", item.replace(": ", " - "))
             elif index == 1:
-                title = item.replace(": ", " - ").replace("/", ",").replace("!", "")
+                # title = item.replace(": ", " - ").replace("/", ",").replace("!", "")
+                title = re.sub(r"[^\w\s/-]", "", item.replace(": ", " - "))
         # for item in split_pattern:
         #     if item in info.replace(": ", " - ").replace("/", ","):
         #         section = item
