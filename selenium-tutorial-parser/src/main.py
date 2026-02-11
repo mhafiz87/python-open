@@ -98,9 +98,8 @@ def get_obs_screenshot(
 
         with open(file_path, "wb") as f:
             f.write(image_bytes)
-        print(f"Screenshot saved to {file_path}")
     else:
-        print("Failed to take screenshot")
+        logger.error("Failed to take screenshot")
 
 
 def send_spacebar() -> None:
