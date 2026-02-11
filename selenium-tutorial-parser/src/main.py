@@ -1,4 +1,11 @@
-
+"""
+TODO: [ ] Detect if media is not in fullscreen and switch to fullscreen, then
+          switch back after recording
+TODO: [ ] Check if there's a freeze frame in the video playback
+TODO: [ ] Create a finally block to ensure OBS recording is stopped on error
+TODO: [ ] Add command line arguments for setting root output directory
+TODO: [ ] Add command line arguments for settingsections to focus/stop, etc
+"""
 # ruff: noqa: F401
 
 import os
@@ -335,11 +342,11 @@ if __name__ == "__main__":
     sections = get_sections()
     section_to_focus: tuple[str, ...] = ()
     section_to_stop: tuple[str, ...] = ()
-    print("Course name:", course)
+    logger.info("Course name:", course)
     # print("Sections:", sections)
     # for section in sections:
     #     print(section)
-    print("Current media info:", get_current_media_info())
+    logger.info("Current media info:", get_current_media_info())
     while True:
         Path(root_output_dir / get_course_name()).mkdir(parents=True, exist_ok=True)
         logger.info(
@@ -354,7 +361,7 @@ if __name__ == "__main__":
         if is_current_page_video():
             # To stop at specific section
             if section_to_stop and section[:10] in section_to_stop:
-                print("Stop process at Section 16.")
+                logger.info(f"Stop process at {section[:10]}")
                 break
             if section[:10] in section_to_focus or not section_to_focus:
                 set_output_filename(f"{section}/{title}")
