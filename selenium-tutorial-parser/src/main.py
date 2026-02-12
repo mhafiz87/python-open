@@ -8,11 +8,12 @@ TODO: [ ] Add command line arguments for settingsections to focus/stop, etc
 """
 # ruff: noqa: F401
 import base64
+import json
 import os
 import re
 import time
 import traceback
-from dataclasses import asdict
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
@@ -35,6 +36,14 @@ from logger import log_file_handler, logger
 
 load_dotenv()
 
+
+@dataclass
+class Config:
+    root_output_dir: str
+
+
+CONFIG_FILE = "config.json"
+
 image_1_name = "debug_screenshot_1.png"
 image_2_name = "debug_screenshot_2.png"
 frame_check_interval = 10  # seconds
@@ -56,10 +65,13 @@ element_data = {
 }
 
 
-root_output_dir = Path("D:/_u")
-# root_output_dir = Path(__file__).parent / "output"
-# root_output_dir = Path("/home/autouser/output")
+def get_config():
+    with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
 
+
+config = Config(**get_config())
+root_output_dir = Path(config.root_output_dir)
 
 def attach_chromedriver() -> ChromiumDriver:
     driver = None
@@ -137,10 +149,10 @@ def get_current_media_info() -> tuple[str, str]:
         for index, item in enumerate(result.groups()):
             if index == 0:
                 # section = item.replace(": ", " - ").replace("/", ",").replace("!", "")
-                section = re.sub(r"[^\w\s/-]", "", item.replace(": ", " - "))
+                section = re.sub(r"[^\w\s-]", "", item.replace(": ", " - "))
             elif index == 1:
                 # title = item.replace(": ", " - ").replace("/", ",").replace("!", "")
-                title = re.sub(r"[^\w\s/-]", "", item.replace(": ", " - "))
+                title = re.sub(r"[^\w\s-]", "", item.replace(": ", " - "))
         # for item in split_pattern:
         #     if item in info.replace(": ", " - ").replace("/", ","):
         #         section = item
@@ -373,7 +385,6 @@ if __name__ == "__main__":
     # for section in sections:
     #     print(section)
     logger.info(f"Current media info: {get_current_media_info()}")
-    # exit()
     while True:
         Path(root_output_dir / get_course_name()).mkdir(parents=True, exist_ok=True)
         logger.info(
