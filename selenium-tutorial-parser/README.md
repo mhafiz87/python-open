@@ -27,6 +27,25 @@
    1.4 Store port and password in `.env` file
 2. Launch OBS with `admin` if using Windows.
 
+## .env File
+
+1. Create a `.env` file with these keys:
+
+   ```text
+   OBS_PORT=
+   OBS_PASSWORD=
+   ```
+
+## Config File
+
+1. Create a config file name `config.json` with this key value:
+
+   ```json
+   {
+      "root_output_dir": ""
+   }
+   ```
+
 ## References
 
 1. [Can Selenium interact with an existing browser session?](https://stackoverflow.com/a/70088095)
