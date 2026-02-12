@@ -12,6 +12,8 @@
 
    ```powershell
    chrome --remote-debugging-port=9222 --user-data-dir="$HOME/temp/chrome_profile"
+   # or for always fullscreen
+   chrome --kiosk --remote-debugging-port=9222 --user-data-dir="$HOME/temp/chrome_profile"
    ```
 
 3. Login into website and go into the target url.
@@ -23,6 +25,7 @@
    1.2 Enable Web Socket Server
    1.3 Show connect info to get password
    1.4 Store port and password in `.env` file
+2. Launch OBS with `admin` if using Windows.
 
 ## References
 
