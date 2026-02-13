@@ -42,7 +42,7 @@ class Config:
     root_output_dir: str
     medias: tuple[str, ...]
     section_to_focus: tuple[tuple[str, ...], ...]
-    section_to_skip: tuple[tuple[str, ...], ...]
+    section_to_stop: tuple[tuple[str, ...], ...]
 
 
 CONFIG_FILE = "config.json"
@@ -78,6 +78,9 @@ def get_config():
 
 root_output_dir = Path(Config(**get_config()).root_output_dir)
 medias = Config(**get_config()).medias
+sections_to_focus = Config(**get_config()).section_to_focus
+sections_to_stop = Config(**get_config()).section_to_stop
+
 
 def attach_chromedriver() -> ChromiumDriver:
     driver = None
@@ -124,10 +127,6 @@ def send_spacebar() -> None:
     driver.find_element(By.TAG_NAME, "body").send_keys(Keys.SPACE)
 
 
-def send_f() -> None:
-    driver.find_element(By.TAG_NAME, "video").send_keys("f")
-
-
 def get_course_name() -> str:
     element = WebDriverWait(driver, 30).until(
         EC.presence_of_element_located((By.XPATH, element_data["course-title"]))
@@ -137,7 +136,7 @@ def get_course_name() -> str:
     return course
 
 
-def get_sections() -> tuple[str]:
+def get_sections() -> list[str]:
     sections: list[str] = []
     elements = driver.find_elements(
         by=By.XPATH,
@@ -145,7 +144,7 @@ def get_sections() -> tuple[str]:
     )
     for element in elements:
         sections.append(element.text.replace(": ", " - "))
-    return tuple(sections)
+    return sections
 
 
 def get_current_media_info() -> tuple[str, str]:
@@ -160,20 +159,9 @@ def get_current_media_info() -> tuple[str, str]:
         result = re.match(section_pattern, info)
         for index, item in enumerate(result.groups()):
             if index == 0:
-                # section = item.replace(": ", " - ").replace("/", ",").replace("!", "")
                 section = re.sub(r"[^\w\s-]", "", item.replace(": ", " - "))
             elif index == 1:
-                # title = item.replace(": ", " - ").replace("/", ",").replace("!", "")
                 title = re.sub(r"[^\w\s-]", "", item.replace(": ", " - "))
-        # for item in split_pattern:
-        #     if item in info.replace(": ", " - ").replace("/", ","):
-        #         section = item
-        #         title = (
-        #             info.split(", Lecture", maxsplit=1)[1]
-        #             .replace(": ", " - ")
-        #             .replace("/", ",")
-        #         )
-        # print(f"{'Section':<8}: {section}\n{'Title':<8}: {title}")
         return section, title
     except Exception:
         traceback.print_exc()
@@ -318,6 +306,14 @@ def is_last_screen() -> bool:
         return False
 
 
+def make_video_ui_invisible() -> None:
+    video_element = WebDriverWait(driver, 2).until(
+        EC.presence_of_element_located((By.XPATH, element_data["video_class"]))
+    )
+    ActionChains(driver).move_to_element(video_element).perform()
+    ActionChains(driver).move_by_offset(200, 200).perform()
+
+
 def seconds_to_time(seconds, precision=2):
     """
     Convert seconds to formatted HH:MM:SS string with customizable decimal precision.
@@ -422,154 +418,143 @@ def save_text_content(output: str) -> None:
         logger.error(f"{type(error).__name__}: {error}")
 
 
-if __name__ == "__main__":
-    timestamp = datetime.now().strftime("%Y%m%d_%H:%M:%S")
-    log_file_handler.write_header(f"Web Parser: Start At {timestamp}")
+def check_media_ended(section: str, title: str) -> bool:
     new_media = True
-    driver = attach_chromedriver()
-    obs_cl = connect_obs_socket()
-    for media_index, media in enumerate(medias):
-        # driver.get(media)
-        # course_button_exists, course_button = is_buy_now_button_exist()
-        # if course_button_exists:
-        #     course_button.click()
-        #     time.sleep(10)
-        # else:
-        #     logger.warning(
-        #         "Enroll Now / Go to course button not found. Please enroll in /"
-        #         " buy the course and navigate to the first lecture, then restart"
-        #         " the program."
-        #     )
-        course = get_course_name()
-        if not is_fullscreen():
-            toggle_fullscreen()
-    exit()
+    frame_counter = 1
+    old_current_time = ""
+    frame_check_initial_time = time.monotonic()
+    # Check for frame freeze every frame_check_interval seconds or
+    # when time position does not change
+    get_obs_screenshot(obs_cl, image_2_name)
+    while not is_media_ended():
+        current_time, duration = show_time_position(clear_line=not new_media)
+        if current_time != old_current_time:
+            old_current_time = current_time
+        else:
+            # No change in time position, possibly stalled
+            logger.warning("Time position not changing, possible stall detected.")
+            logger.warning(f"Stopping {section}, {title} due to stall.")
+            break
+        frame_check_time = time.monotonic()
+        if frame_check_time - frame_check_initial_time >= frame_check_interval:
+            # Take screenshot for frame freeze detection
+            if frame_counter % 2 == 1:
+                get_obs_screenshot(obs_cl, image_1_name)
+                frame_counter = 2
+            else:
+                get_obs_screenshot(obs_cl, image_2_name)
+                frame_counter = 1
+            img1 = Image.open(image_1_name)
+            img2 = Image.open(image_2_name)
+            img1_array = np.array(img1)
+            img2_array = np.array(img2)
+            freeze = np.array_equal(img1_array, img2_array)
+            if freeze:
+                logger.warning("Frame freeze detected in OBS.")
+                logger.warning(f"Stopping {section}, {title} due to freeze.")
+                logger.warning("Stopping process.")
+                obs_cl.stop_record()
+                exit()
+            frame_check_initial_time = frame_check_time
+        new_media = False
+
+
+def go_to_next_media() -> None:
+    right_button = is_next_right_button_exist()
+    if right_button[0]:
+        right_button[1].click()
+        logger.info("Navigated to next media.")
+        time.sleep(5)
+    else:
+        if is_last_screen():
+            logger.info("Reached the last lesson screen. Stopping process.")
+        else:
+            logger.warning("Next button not found. Possibly reached the end.")
+
+
+def main(index: int) -> None:
+    section_to_focus = ()
+    section_to_stop = ()
+    course = get_course_name()
+    create_output_dir((root_output_dir / course).as_posix())
+    # There's a possibility that course name is too long and causes OBS
+    # recording error, so set output dir to root dir first, then manually copy
+    # and paste to course dir after recording is done
+    set_output_dir((root_output_dir).as_posix())
+    if sections_to_focus:
+        section_to_focus = sections_to_focus[index]
+        logger.info(f"Sections to focus: {section_to_focus}")
+    if sections_to_stop:
+        section_to_stop = sections_to_stop[index]
+        logger.info(f"Sections to stop: {section_to_stop}")
+    if not is_fullscreen():
+        toggle_fullscreen()
     while True:
-        # sections = get_sections(
-        section_to_focus: tuple[str, ...] = ()
-        section_to_stop: tuple[str, ...] = ()
-        logger.info(f"Course name: {course}")
-        # print("Sections:", sections)
-        # for section in sections:
-        #     print(section)
-        logger.info(f"Current media info: {get_current_media_info()}")
-        Path(root_output_dir / get_course_name()).mkdir(parents=True, exist_ok=True)
-        logger.info(
-            "Create output directory for course: "
-            f"{Path(root_output_dir / get_course_name()).as_posix()}"
-        )
-        root_output_dir.mkdir(parents=True, exist_ok=True)
-        create_output_dir(root_output_dir.as_posix())
-        set_output_dir(root_output_dir.as_posix())
         section, title = get_current_media_info()
-        print(section, title)
         if is_current_page_video():
-            # To stop at specific section
             if section_to_stop and section[:10] in section_to_stop:
                 logger.info(f"Stop process at {section[:10]}")
                 break
             if section[:10] in section_to_focus or not section_to_focus:
                 set_output_filename(f"{section}/{title}")
-                # print( obs_cl.get_profile_parameter( "Output", "FilenameFormatting").__dict__.keys())
-                # print( obs_cl.get_profile_parameter( "SimpleOutput", "FilePath").parameter_value)
-                # print( obs_cl.get_profile_parameter( "Output", "FilenameFormatting").parameter_value)
-                filename = obs_cl.get_profile_parameter(
-                    "Output", "FilenameFormatting"
-                ).parameter_value
                 logger.info(
                     f"Output media to: {(root_output_dir / section / title).as_posix()}"
                 )
                 logger.info(f"Watching media: {section} - {title}")
                 logger.info(f"Media duration: {get_media_duration()}")
-                if not is_media_paused():
-                    send_spacebar()  # pause
-                time.sleep(0.5)
-                # Move mouse to make UI invisible
-                video_element = WebDriverWait(driver, 2).until(
-                    EC.presence_of_element_located(
-                        (By.XPATH, element_data["video_class"])
-                    )
-                )
-                ActionChains(driver).move_to_element(video_element).perform()
-                ActionChains(driver).move_by_offset(200, 200).perform()
-                time.sleep(3)
-                send_spacebar()  # play
-                print("Media is playing...")
+                make_video_ui_invisible()
                 if not is_media_playing():
                     print("Media is paused, resuming...")
                     send_spacebar()  # play
-                    print("Media is playing...")
-                ActionChains(driver).move_to_element(video_element).perform()
-                ActionChains(driver).move_by_offset(200, 200).perform()
-                time.sleep(3)
                 restart_media()
                 obs_cl.start_record()
                 logger.info("Recording started.")
-                old_current_time = ""
-                frame_check_initial_time = time.monotonic()
-                # Check for frame freeze every frame_check_interval seconds or
-                # when time position does not change
-                get_obs_screenshot(obs_cl, image_2_name)
-                while not is_media_ended():
-                    current_time, duration = show_time_position(
-                        clear_line=not new_media
-                    )
-                    if current_time != old_current_time:
-                        old_current_time = current_time
-                    else:
-                        # No change in time position, possibly stalled
-                        logger.warning(
-                            "Time position not changing, possible stall detected."
-                        )
-                        logger.warning(f"Stopping {section}, {title} due to stall.")
-                        break
-                    frame_check_time = time.monotonic()
-                    if (
-                        frame_check_time - frame_check_initial_time
-                        >= frame_check_interval
-                    ):
-                        # Take screenshot for frame freeze detection
-                        if frame_counter % 2 == 1:
-                            get_obs_screenshot(obs_cl, image_1_name)
-                            frame_counter = 2
-                        else:
-                            get_obs_screenshot(obs_cl, image_2_name)
-                            frame_counter = 1
-                        img1 = Image.open(image_1_name)
-                        img2 = Image.open(image_2_name)
-                        img1_array = np.array(img1)
-                        img2_array = np.array(img2)
-                        freeze = np.array_equal(img1_array, img2_array)
-                        if freeze:
-                            logger.warning("Frame freeze detected in OBS.")
-                            logger.warning(
-                                f"Stopping {section}, {title} due to freeze."
-                            )
-                            logger.warning("Stopping process.")
-                            obs_cl.stop_record()
-                            exit()
-                        frame_check_initial_time = frame_check_time
-                    new_media = False
+                check_media_ended(section, title)
                 obs_cl.stop_record()
                 logger.info("Recording stopped.")
                 time.sleep(0.5)
-            else:
-                logger.info(f"Skip section: {section}")
         else:
             logger.warning("Current page is not a video media.")
             try:
                 save_text_content(output=(root_output_dir / section / title).as_posix())
             except Exception:
                 logger.error("This is not a text media. Skipping...")
-        right_button = is_next_right_button_exist()
-        if right_button[0]:
-            right_button[1].click()
-            logger.info("Navigated to next media.")
-            new_media = True
-            time.sleep(10)
+        go_to_next_media()
+
+
+if __name__ == "__main__":
+    timestamp = datetime.now().strftime("%Y%m%d_%H:%M:%S")
+    log_file_handler.write_header(f"Web Parser: Start At {timestamp}")
+    new_media = True
+    driver = attach_chromedriver()
+    obs_cl = connect_obs_socket()
+    try:
+        for media_index, media in enumerate(medias):
+            logger.info(f"Processing media {media_index + 1}/{len(medias)}: {media}")
+            current_url = driver.current_url
+            if media not in current_url:
+                driver.get(media)
+                course_button_exists, course_button = is_buy_now_button_exist()
+                if course_button_exists:
+                    course_button.click()
+                else:
+                    logger.warning(
+                        "Enroll Now / Go to course button not found. Please enroll in /"
+                        " buy the course and navigate to the first lecture,"
+                        " then restart the program."
+                    )
+                    exit()
+            main(index=media_index)
         else:
-            if is_last_screen():
-                logger.info("Reached the last lesson screen. Stopping process.")
-            break
-    log_file_handler.write_separator()
-    print("Done")
+            logger.info("No more media URLs found in configuration.")
+            log_file_handler.write_separator()
+            exit()
+    except Exception:
+        logger.error("Encounter error while processing media.")
+        recording_status = obs_cl.get_record_status()
+        if recording_status.output_active:
+            obs_cl.stop_record()
+            logger.warning("Stopped OBS recording due to error.")
+        traceback.print_exc()
+        log_file_handler.write_separator()
+        exit()
