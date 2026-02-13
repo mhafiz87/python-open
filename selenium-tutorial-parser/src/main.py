@@ -1,5 +1,5 @@
 """
-TODO: [ ] Detect if media is not in fullscreen and switch to fullscreen, then
+TODO: [x] Detect if media is not in fullscreen and switch to fullscreen, then
           switch back after recording
 TODO: [x] Check if there's a freeze frame in the OBS recording
 TODO: [ ] Create a finally block to ensure OBS recording is stopped on error
@@ -40,6 +40,9 @@ load_dotenv()
 @dataclass
 class Config:
     root_output_dir: str
+    medias: tuple[str, ...]
+    section_to_focus: tuple[tuple[str, ...], ...]
+    section_to_skip: tuple[tuple[str, ...], ...]
 
 
 CONFIG_FILE = "config.json"
@@ -51,6 +54,8 @@ frame_counter = 1
 
 current_section: str = ""
 element_data = {
+    "course-title": r'//h1[@data-purpose = "course-header-title"]',
+    "buy-now-button": r'//button[@data-purpose = "buy-now-button"]',
     "title": r'//section[@class = "lecture-view--container--mrZSm"]',
     "pause_button": r'//button[@data-purpose = "pause-button"]',
     "play_button": r'//button[@data-purpose = "play-button"]',
@@ -59,9 +64,10 @@ element_data = {
     "goto_next_right_button": r'//div[@data-purpose = "go-to-next"]',
     "rewind_button": r'//button[@data-purpose = "rewind-skip-button"]',
     "video_class": r'//video[@class = "video-player--video-player--HiAnq"]',
-    "fullscreen_button": r'//button[@aria-label = "Fullscreen"]',
-    "exit_fullscreen_button": r'//button[@aria-label = "Exit fullscreen"]',
+    "fullscreen_button": r'//button[@id = "popper-trigger--331"]',
+    "fullscreen_svg": r'//svg[@aria-label = "Fullscreen"]',
     "text_viewer_class": r'//div[@data-purpose = "safely-set-inner-html:rich-text-viewer:html"]',
+    "last-lesson": r'//h2[@data-purpose = "primary-message"]',
 }
 
 
@@ -70,8 +76,8 @@ def get_config():
         return json.load(f)
 
 
-config = Config(**get_config())
-root_output_dir = Path(config.root_output_dir)
+root_output_dir = Path(Config(**get_config()).root_output_dir)
+medias = Config(**get_config()).medias
 
 def attach_chromedriver() -> ChromiumDriver:
     driver = None
@@ -118,11 +124,17 @@ def send_spacebar() -> None:
     driver.find_element(By.TAG_NAME, "body").send_keys(Keys.SPACE)
 
 
+def send_f() -> None:
+    driver.find_element(By.TAG_NAME, "video").send_keys("f")
+
+
 def get_course_name() -> str:
-    element = driver.find_element(
-        by=By.XPATH, value='//h1[@data-purpose = "course-header-title"]'
+    element = WebDriverWait(driver, 30).until(
+        EC.presence_of_element_located((By.XPATH, element_data["course-title"]))
     )
-    return element.text.replace(": ", " - ")
+    course = re.sub(r"[^\w\s-]", "", element.text.replace(": ", " - "))
+    logger.info(f"Course name: {course}")
+    return course
 
 
 def get_sections() -> tuple[str]:
@@ -201,21 +213,38 @@ def is_current_page_video() -> bool:
         return False
 
 
-def is_fullscreen() -> tuple[bool, WebElement | None]:
+def is_fullscreen() -> bool:
     try:
-        element = WebDriverWait(driver, 2).until(
-            EC.presence_of_element_located(
-                (By.XPATH, element_data["exit_fullscreen_button"])
-            )
-        )
-        return (True, element)
-    except Exception:
         element = WebDriverWait(driver, 2).until(
             EC.presence_of_element_located(
                 (By.XPATH, element_data["fullscreen_button"])
             )
         )
-        return (False, element)
+        childs = element.find_elements(By.XPATH, "./*")
+        for child in childs:
+            if child.tag_name == "svg":
+                aria_label = child.get_attribute("aria-label")
+                if aria_label and aria_label.lower() == "fullscreen":
+                    logger.info("Currently not in fullscreen mode.")
+                    return False
+        return True
+    except Exception:
+        traceback.print_exc()
+        return True
+
+
+def toggle_fullscreen() -> None:
+    try:
+        element = WebDriverWait(driver, 2).until(
+            EC.presence_of_element_located(
+                (By.XPATH, element_data["fullscreen_button"])
+            )
+        )
+        element.click()
+        logger.info("Toggled fullscreen mode.")
+    except Exception:
+        traceback.print_exc()
+        logger.error("Unable to toggle fullscreen mode.")
 
 
 def is_next_right_button_exist() -> tuple[bool, WebElement | None]:
@@ -225,6 +254,17 @@ def is_next_right_button_exist() -> tuple[bool, WebElement | None]:
                 (By.XPATH, element_data["goto_next_right_button"])
             )
         )
+        return True, element
+    except Exception:
+        return False, None
+
+
+def is_buy_now_button_exist() -> tuple[bool, WebElement | None]:
+    try:
+        element = WebDriverWait(driver, 30).until(
+            EC.element_to_be_clickable((By.XPATH, element_data["buy-now-button"]))
+        )
+        logger.info("Enroll Now / Go to course button found.")
         return True, element
     except Exception:
         return False, None
@@ -263,6 +303,18 @@ def is_media_ended() -> bool:
         return True
     except Exception:
         # print("Media is playing...")
+        return False
+
+
+def is_last_screen() -> bool:
+    try:
+        WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located((By.XPATH, element_data["last-lesson"]))
+        )
+        print("This is the last lesson screen.")
+        return True
+    except Exception:
+        # print("This is not the last lesson screen.")
         return False
 
 
@@ -376,16 +428,31 @@ if __name__ == "__main__":
     new_media = True
     driver = attach_chromedriver()
     obs_cl = connect_obs_socket()
-    course = get_course_name()
-    sections = get_sections()
-    section_to_focus: tuple[str, ...] = ()
-    section_to_stop: tuple[str, ...] = ()
-    logger.info(f"Course name: {course}")
-    # print("Sections:", sections)
-    # for section in sections:
-    #     print(section)
-    logger.info(f"Current media info: {get_current_media_info()}")
+    for media_index, media in enumerate(medias):
+        # driver.get(media)
+        # course_button_exists, course_button = is_buy_now_button_exist()
+        # if course_button_exists:
+        #     course_button.click()
+        #     time.sleep(10)
+        # else:
+        #     logger.warning(
+        #         "Enroll Now / Go to course button not found. Please enroll in /"
+        #         " buy the course and navigate to the first lecture, then restart"
+        #         " the program."
+        #     )
+        course = get_course_name()
+        if not is_fullscreen():
+            toggle_fullscreen()
+    exit()
     while True:
+        # sections = get_sections(
+        section_to_focus: tuple[str, ...] = ()
+        section_to_stop: tuple[str, ...] = ()
+        logger.info(f"Course name: {course}")
+        # print("Sections:", sections)
+        # for section in sections:
+        #     print(section)
+        logger.info(f"Current media info: {get_current_media_info()}")
         Path(root_output_dir / get_course_name()).mkdir(parents=True, exist_ok=True)
         logger.info(
             "Create output directory for course: "
@@ -501,6 +568,8 @@ if __name__ == "__main__":
             new_media = True
             time.sleep(10)
         else:
+            if is_last_screen():
+                logger.info("Reached the last lesson screen. Stopping process.")
             break
     log_file_handler.write_separator()
     print("Done")
