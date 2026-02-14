@@ -64,8 +64,8 @@ element_data = {
     "goto_next_right_button": r'//div[@data-purpose = "go-to-next"]',
     "rewind_button": r'//button[@data-purpose = "rewind-skip-button"]',
     "video_class": r'//video[@class = "video-player--video-player--HiAnq"]',
-    "fullscreen_button": r'//button[@id = "popper-trigger--331"]',
-    "fullscreen_svg": r'//svg[@aria-label = "Fullscreen"]',
+    "fullscreen_button": r'//button[@class = "ud-btn ud-btn-small ud-btn-ghost ud-btn-text-sm control-bar-dropdown--trigger--FnmP- control-bar-dropdown--trigger-dark--ZK26r control-bar-dropdown--trigger-small--ogRJ4 "]',
+    "fullscreen_svg": r"//*[name()='svg'][@aria-label='Fullscreen' or @aria-label='Exit fullscreen']",
     "text_viewer_class": r'//div[@data-purpose = "safely-set-inner-html:rich-text-viewer:html"]',
     "last-lesson": r'//h2[@data-purpose = "primary-message"]',
 }
@@ -204,30 +204,27 @@ def is_current_page_video() -> bool:
 def is_fullscreen() -> bool:
     try:
         element = WebDriverWait(driver, 2).until(
-            EC.presence_of_element_located(
-                (By.XPATH, element_data["fullscreen_button"])
-            )
+            EC.presence_of_element_located((By.XPATH, element_data["fullscreen_svg"]))
         )
-        childs = element.find_elements(By.XPATH, "./*")
-        for child in childs:
-            if child.tag_name == "svg":
-                aria_label = child.get_attribute("aria-label")
-                if aria_label and aria_label.lower() == "fullscreen":
-                    logger.info("Currently not in fullscreen mode.")
-                    return False
-        return True
+        aria_label = element.get_attribute("aria-label")
+        if aria_label == "Fullscreen":
+            logger.info("Currently not in fullscreen mode.")
+            return False
+        else:
+            logger.info("Currently in fullscreen mode.")
+            return True
     except Exception:
         traceback.print_exc()
+        logger.error("Unable to determine fullscreen mode. Assuming in fullscreen.")
         return True
 
 
 def toggle_fullscreen() -> None:
     try:
-        element = WebDriverWait(driver, 2).until(
-            EC.presence_of_element_located(
-                (By.XPATH, element_data["fullscreen_button"])
-            )
+        child = WebDriverWait(driver, 2).until(
+            EC.presence_of_element_located((By.XPATH, element_data["fullscreen_svg"]))
         )
+        element = child.find_element(By.XPATH, "./..")
         element.click()
         logger.info("Toggled fullscreen mode.")
     except Exception:
@@ -464,7 +461,7 @@ def go_to_next_media() -> None:
     if right_button[0]:
         right_button[1].click()
         logger.info("Navigated to next media.")
-        time.sleep(5)
+        time.sleep(10)
     else:
         if is_last_screen():
             logger.info("Reached the last lesson screen. Stopping process.")
@@ -503,6 +500,7 @@ def main(index: int) -> None:
                 logger.info(f"Watching media: {section} - {title}")
                 logger.info(f"Media duration: {get_media_duration()}")
                 make_video_ui_invisible()
+                time.sleep(2)
                 if not is_media_playing():
                     print("Media is paused, resuming...")
                     send_spacebar()  # play
