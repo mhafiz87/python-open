@@ -42,9 +42,20 @@
 
    ```json
    {
-      "root_output_dir": ""
+     "root_output_dir": "",
+     "medias": [],
+     "section_to_focus": [],
+     "section_to_stop": []
    }
    ```
+
+2. Details:
+
+   | key                | type                   | example                              |
+   | ------------------ | ---------------------- | ------------------------------------ |
+   | "medias"           | list of strings        | ["url1", "url2"]                     |
+   | "section_to_focus" | list of list of string | [["url1_section"], ["url1_section"]] |
+   | "section_to_stop"  | list of list of string | [["url1_section"], ["url1_section"]] |
 
 ## References
 
