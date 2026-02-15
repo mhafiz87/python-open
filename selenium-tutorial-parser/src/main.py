@@ -68,6 +68,7 @@ element_data = {
     "fullscreen_svg": r"//*[name()='svg'][@aria-label='Fullscreen' or @aria-label='Exit fullscreen']",
     "text_viewer_class": r'//div[@data-purpose = "safely-set-inner-html:rich-text-viewer:html"]',
     "last-lesson": r'//h2[@data-purpose = "primary-message"]',
+    "progress-bar": r'//div[@class="progress-bar--progress-holder--PGd9h"]',
 }
 
 
@@ -303,12 +304,23 @@ def is_last_screen() -> bool:
         return False
 
 
+def is_ui_visible() -> bool:
+    try:
+        element = WebDriverWait(driver, 2).until(
+            EC.presence_of_element_located((By.XPATH, element_data["progress-bar"]))
+        )
+        return element.is_displayed()
+    except Exception:
+        return False
+
+
 def make_video_ui_invisible() -> None:
     video_element = WebDriverWait(driver, 2).until(
         EC.presence_of_element_located((By.XPATH, element_data["video_class"]))
     )
     ActionChains(driver).move_to_element(video_element).perform()
     ActionChains(driver).move_by_offset(200, 200).perform()
+    time.sleep(2)
 
 
 def seconds_to_time(seconds, precision=2):
@@ -500,7 +512,7 @@ def main(index: int) -> None:
                 logger.info(f"Watching media: {section} - {title}")
                 logger.info(f"Media duration: {get_media_duration()}")
                 make_video_ui_invisible()
-                time.sleep(2)
+                print(f"Is UI visible before recording? {is_ui_visible()}")
                 if not is_media_playing():
                     print("Media is paused, resuming...")
                     send_spacebar()  # play
