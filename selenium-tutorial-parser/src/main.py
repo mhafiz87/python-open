@@ -309,8 +309,10 @@ def is_ui_visible() -> bool:
         element = WebDriverWait(driver, 2).until(
             EC.presence_of_element_located((By.XPATH, element_data["progress-bar"]))
         )
+        logger.info("Progress bar is visible..")
         return element.is_displayed()
     except Exception:
+        logger.info("Progress bar is NOT visible..")
         return False
 
 
@@ -318,9 +320,10 @@ def make_video_ui_invisible() -> None:
     video_element = WebDriverWait(driver, 2).until(
         EC.presence_of_element_located((By.XPATH, element_data["video_class"]))
     )
+    logger.info("Moving mouse to make video UI invisible...")
     ActionChains(driver).move_to_element(video_element).perform()
     ActionChains(driver).move_by_offset(200, 200).perform()
-    time.sleep(2)
+    time.sleep(3)
 
 
 def seconds_to_time(seconds, precision=2):
@@ -514,8 +517,10 @@ def main(index: int) -> None:
                 )
                 logger.info(f"Watching media: {section} - {title}")
                 logger.info(f"Media duration: {get_media_duration()}")
-                make_video_ui_invisible()
-                print(f"Is UI visible before recording? {is_ui_visible()}")
+                for _ in range(5):
+                    make_video_ui_invisible()
+                    if not is_ui_visible():
+                        break
                 if not is_media_playing():
                     print("Media is paused, resuming...")
                     send_spacebar()  # play
