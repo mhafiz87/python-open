@@ -68,7 +68,7 @@ element_data = {
     "fullscreen_svg": r"//*[name()='svg'][@aria-label='Fullscreen' or @aria-label='Exit fullscreen']",
     "text_viewer_class": r'//div[@data-purpose = "safely-set-inner-html:rich-text-viewer:html"]',
     "last-lesson": r'//h2[@data-purpose = "primary-message"]',
-    "progress-bar": r'//div[@class="progress-bar--progress-holder--PGd9h"]',
+    "progress-bar": r'//div[@data-purpose="video-progress-buffer"]',
 }
 
 
@@ -309,10 +309,10 @@ def is_ui_visible() -> bool:
         element = WebDriverWait(driver, 2).until(
             EC.presence_of_element_located((By.XPATH, element_data["progress-bar"]))
         )
-        logger.info("Progress bar is visible..")
+        logger.info(f"Progress bar visibility: {element.is_displayed()}")
         return element.is_displayed()
     except Exception:
-        logger.info("Progress bar is NOT visible..")
+        logger.info("Progress bar visibility: False")
         return False
 
 
@@ -322,8 +322,8 @@ def make_video_ui_invisible() -> None:
     )
     logger.info("Moving mouse to make video UI invisible...")
     ActionChains(driver).move_to_element(video_element).perform()
-    ActionChains(driver).move_by_offset(200, 200).perform()
-    time.sleep(3)
+    # ActionChains(driver).move_by_offset(200, 200).perform()
+    time.sleep(5)
 
 
 def seconds_to_time(seconds, precision=2):
@@ -524,6 +524,7 @@ def main(index: int) -> None:
                 if not is_media_playing():
                     print("Media is paused, resuming...")
                     send_spacebar()  # play
+                    make_video_ui_invisible()
                 restart_media()
                 obs_cl.start_record()
                 logger.info("Recording started.")
