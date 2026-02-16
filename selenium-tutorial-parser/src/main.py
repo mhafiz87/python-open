@@ -49,7 +49,7 @@ CONFIG_FILE = "config.json"
 
 image_1_name = "debug_screenshot_1.png"
 image_2_name = "debug_screenshot_2.png"
-frame_check_interval = 10  # seconds
+frame_check_interval = 30  # seconds
 frame_counter = 1
 
 current_section: str = ""
@@ -468,17 +468,20 @@ def check_media_ended(section: str, title: str) -> bool:
         new_media = False
 
 
-def go_to_next_media() -> None:
+def go_to_next_media() -> bool:
     right_button = is_next_right_button_exist()
     if right_button[0]:
         right_button[1].click()
         logger.info("Navigated to next media.")
         time.sleep(10)
+        return True
     else:
         if is_last_screen():
             logger.info("Reached the last lesson screen. Stopping process.")
+            return False
         else:
             logger.warning("Next button not found. Possibly reached the end.")
+            return False
 
 
 def main(index: int) -> None:
@@ -529,7 +532,8 @@ def main(index: int) -> None:
                 save_text_content(output=(root_output_dir / section / title).as_posix())
             except Exception:
                 logger.error("This is not a text media. Skipping...")
-        go_to_next_media()
+        if not go_to_next_media():
+            break
 
 
 if __name__ == "__main__":
@@ -547,6 +551,7 @@ if __name__ == "__main__":
                 course_button_exists, course_button = is_buy_now_button_exist()
                 if course_button_exists:
                     course_button.click()
+                    time.sleep(30)  # Wait for navigation to course page
                 else:
                     logger.warning(
                         "Enroll Now / Go to course button not found. Please enroll in /"
