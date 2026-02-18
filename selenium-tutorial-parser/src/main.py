@@ -517,6 +517,8 @@ def main(index: int) -> None:
                 )
                 logger.info(f"Watching media: {section} - {title}")
                 logger.info(f"Media duration: {get_media_duration()}")
+                if not is_fullscreen():
+                    toggle_fullscreen()
                 for _ in range(5):
                     make_video_ui_invisible()
                     if not is_ui_visible():
