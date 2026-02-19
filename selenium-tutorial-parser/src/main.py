@@ -55,7 +55,7 @@ frame_counter = 1
 current_section: str = ""
 element_data = {
     "course-title": r'//h1[@data-purpose = "course-header-title"]',
-    "buy-now-button": r'//button[@data-purpose = "buy-now-button"]',
+    "buy-now-button": r"//button[@data-purpose='buy-now-button'][.//*[contains(text(), 'Enroll now') or contains(text(), 'Go to course')]]",
     "title": r'//section[@class = "lecture-view--container--mrZSm"]',
     "pause_button": r'//button[@data-purpose = "pause-button"]',
     "play_button": r'//button[@data-purpose = "play-button"]',
@@ -247,7 +247,7 @@ def is_next_right_button_exist() -> tuple[bool, WebElement | None]:
 
 def is_buy_now_button_exist() -> tuple[bool, WebElement | None]:
     try:
-        element = WebDriverWait(driver, 30).until(
+        element = WebDriverWait(driver, 60).until(
             EC.element_to_be_clickable((By.XPATH, element_data["buy-now-button"]))
         )
         logger.info("Enroll Now / Go to course button found.")
@@ -556,17 +556,21 @@ if __name__ == "__main__":
             current_url = driver.current_url
             if media not in current_url:
                 driver.get(media)
-                course_button_exists, course_button = is_buy_now_button_exist()
-                if course_button_exists:
-                    course_button.click()
-                    time.sleep(30)  # Wait for navigation to course page
-                else:
-                    logger.warning(
-                        "Enroll Now / Go to course button not found. Please enroll in /"
-                        " buy the course and navigate to the first lecture,"
-                        " then restart the program."
-                    )
-                    exit()
+                # course_button_exists, course_button = is_buy_now_button_exist()
+                # if course_button_exists:
+                #     course_button.click()
+                #     time.sleep(30)  # Wait for navigation to course page
+                # else:
+                #     logger.warning(
+                #         "Enroll Now / Go to course button not found. Please enroll in /"
+                #         " buy the course and navigate to the first lecture,"
+                #         " then restart the program."
+                #     )
+                #     exit()
+            course_button_exists, course_button = is_buy_now_button_exist()
+            if course_button_exists:
+                course_button.click()
+                time.sleep(30)  # Wait for navigation to course page
             main(index=media_index)
         else:
             logger.info("No more media URLs found in configuration.")
