@@ -2,9 +2,10 @@
 TODO: [x] Detect if media is not in fullscreen and switch to fullscreen, then
           switch back after recording
 TODO: [x] Check if there's a freeze frame in the OBS recording
-TODO: [ ] Create a finally block to ensure OBS recording is stopped on error
+TODO: [x] Create a finally block to ensure OBS recording is stopped on error
 TODO: [ ] Add command line arguments for setting root output directory
 TODO: [ ] Add command line arguments for settingsections to focus/stop, etc
+TODO: [ ] Add function to create or update config.json file with new keys
 """
 # ruff: noqa: F401
 import base64
