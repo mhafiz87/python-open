@@ -1,5 +1,6 @@
 # ruff: noqa: F401
 import re
+import time
 import traceback
 from enum import StrEnum
 
@@ -100,8 +101,156 @@ class Automate:
             print("Unable to find media title.")
             return section, title
 
+    def is_current_page_video(self) -> bool:
+        try:
+            element = WebDriverWait(self.driver, 2).until(
+                EC.presence_of_element_located((By.XPATH, Element.VideoClass))
+            )
+            # Move mouse to make UI invisible
+            ActionChains(self.driver).move_to_element(element).perform()
+            return True
+        except Exception:
+            return False
+
+    def is_fullscreen(self) -> bool:
+        try:
+            element = WebDriverWait(self.driver, 2).until(
+                EC.presence_of_element_located((By.XPATH, Element.FullscreenSVG))
+            )
+            aria_label = element.get_attribute("aria-label")
+            if aria_label == "Fullscreen":
+                logger.info("Currently not in fullscreen mode.")
+                return False
+            else:
+                logger.info("Currently in fullscreen mode.")
+                return True
+        except Exception:
+            traceback.print_exc()
+            logger.error("Unable to determine fullscreen mode. Assuming in fullscreen.")
+            return True
+
+    def toggle_fullscreen(self) -> None:
+        try:
+            child = WebDriverWait(self.driver, 2).until(
+                EC.presence_of_element_located((By.XPATH, Element.FullscreenSVG))
+            )
+            element = child.find_element(By.XPATH, "./..")
+            element.click()
+            logger.info("Toggled fullscreen mode.")
+        except Exception:
+            traceback.print_exc()
+            logger.error("Unable to toggle fullscreen mode.")
+
+    def is_next_right_button_exist(self) -> tuple[bool, WebElement | None]:
+        try:
+            element = WebDriverWait(self.driver, 2).until(
+                EC.presence_of_element_located((By.XPATH, Element.GoToNextRightButton))
+            )
+            return True, element
+        except Exception:
+            return False, None
+
+    def is_buy_now_button_exist(self) -> tuple[bool, WebElement | None]:
+        try:
+            element = WebDriverWait(self.driver, 30).until(
+                EC.element_to_be_clickable((By.XPATH, Element.BuyNowButton))
+            )
+            logger.info("Enroll Now / Go to course button found.")
+            return True, element
+        except Exception:
+            return False, None
+
+    def is_media_paused(self) -> bool:
+        try:
+            WebDriverWait(self.driver, 2).until(
+                EC.presence_of_element_located((By.XPATH, Element.PlayButton))
+            )
+            print("Media is paused.")
+            return True
+        except Exception:
+            print("Media is playing.")
+            return False
+
+    def is_media_playing(self) -> bool:
+        try:
+            WebDriverWait(self.driver, 2).until(
+                EC.presence_of_element_located((By.XPATH, Element.PauseButton))
+            )
+            print("Media is playing.")
+            return True
+        except Exception:
+            print("Media is paused.")
+            return False
+
+    def is_media_ended(self) -> bool:
+        try:
+            WebDriverWait(self.driver, 2).until(
+                EC.presence_of_element_located((By.XPATH, Element.CancelButton))
+            )
+            print("Media has ended.")
+            return True
+        except Exception:
+            # print("Media is playing...")
+            return False
+
+    def is_last_screen(self) -> bool:
+        try:
+            WebDriverWait(self.driver, 5).until(
+                EC.presence_of_element_located((By.XPATH, Element.LastLesson))
+            )
+            print("This is the last lesson screen.")
+            return True
+        except Exception:
+            # print("This is not the last lesson screen.")
+            return False
+
+    def is_ui_visible(self) -> bool:
+        try:
+            element = WebDriverWait(self.driver, 2).until(
+                EC.presence_of_element_located((By.XPATH, Element.ProgressBar))
+            )
+            logger.info(f"Progress bar visibility: {element.is_displayed()}")
+            return element.is_displayed()
+        except Exception:
+            logger.info("Progress bar visibility: False")
+            return False
+
+    def make_video_ui_invisible(self) -> None:
+        video_element = WebDriverWait(self.driver, 2).until(
+            EC.presence_of_element_located((By.XPATH, Element.VideoClass))
+        )
+        logger.info("Moving mouse to make video UI invisible...")
+        ActionChains(self.driver).move_to_element(video_element).perform()
+        # ActionChains(self.driver).move_by_offset(200, 200).perform()
+        time.sleep(5)
+
     def send_spacebar(self) -> None:
         self.driver.find_element(By.TAG_NAME, "body").send_keys(Keys.SPACE)
+
+    @staticmethod
+    def seconds_to_time(seconds, precision=2):
+        """
+        Convert seconds to formatted HH:MM:SS string with customizable decimal precision.
+
+        Args:
+            seconds (float): Time in seconds
+            precision (int): Number of decimal places (default: 6)
+
+        Returns:
+            str: Formatted time string in HH:MM:SS.xxxxxx format
+        """
+        hours = int(seconds // 3600)
+        remaining = seconds % 3600
+        minutes = int(remaining // 60)
+        remaining_seconds = remaining % 60
+
+        # Calculate width for seconds (2 digits + decimal point + precision)
+        sec_width = 3 + precision if precision > 0 else 2
+
+        if precision > 0:
+            return f"{hours:02d}:{minutes:02d}:{remaining_seconds:0{sec_width}.{precision}f}"
+        else:
+            return f"{hours:02d}:{minutes:02d}:{int(remaining_seconds):02d}"
 
 
 if __name__ == "__main__":

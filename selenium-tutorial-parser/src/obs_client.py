@@ -121,4 +121,5 @@ if __name__ == "__main__":
     if not obs_pids:
         obs.lauch_obs()
     else:
-        obs.close(obs_pids[0])
+        for obs_pid in obs_pids:
+            obs.close(obs_pid)

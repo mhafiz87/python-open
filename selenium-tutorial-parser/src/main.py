@@ -248,7 +248,7 @@ def is_next_right_button_exist() -> tuple[bool, WebElement | None]:
 
 def is_buy_now_button_exist() -> tuple[bool, WebElement | None]:
     try:
-        element = WebDriverWait(driver, 60).until(
+        element = WebDriverWait(driver, 30).until(
             EC.element_to_be_clickable((By.XPATH, element_data["buy-now-button"]))
         )
         logger.info("Enroll Now / Go to course button found.")
