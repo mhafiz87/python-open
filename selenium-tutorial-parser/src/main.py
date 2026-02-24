@@ -488,7 +488,7 @@ def go_to_next_media() -> bool:
             return False
 
 
-def main(index: int) -> None:
+def main(index: int = 0) -> None:
     section_to_focus = ()
     section_to_stop = ()
     course = get_course_name()
@@ -535,6 +535,7 @@ def main(index: int) -> None:
                 obs_cl.stop_record()
                 logger.info("Recording stopped.")
                 time.sleep(0.5)
+                # break
         else:
             logger.warning("Current page is not a video media.")
             try:
@@ -552,29 +553,37 @@ if __name__ == "__main__":
     driver = attach_chromedriver()
     obs_cl = connect_obs_socket()
     try:
-        for media_index, media in enumerate(medias):
-            logger.info(f"Processing media {media_index + 1}/{len(medias)}: {media}")
-            current_url = driver.current_url
-            if media not in current_url:
-                driver.get(media)
-                # course_button_exists, course_button = is_buy_now_button_exist()
-                # if course_button_exists:
-                #     course_button.click()
-                #     time.sleep(30)  # Wait for navigation to course page
-                # else:
-                #     logger.warning(
-                #         "Enroll Now / Go to course button not found. Please enroll in /"
-                #         " buy the course and navigate to the first lecture,"
-                #         " then restart the program."
-                #     )
-                #     exit()
-            course_button_exists, course_button = is_buy_now_button_exist()
-            if course_button_exists:
-                course_button.click()
-                time.sleep(30)  # Wait for navigation to course page
-            main(index=media_index)
+        if medias:
+            for media_index, media in enumerate(medias):
+                logger.info(
+                    f"Processing media {media_index + 1}/{len(medias)}: {media}"
+                )
+                current_url = driver.current_url
+                if media not in current_url:
+                    driver.get(media)
+                    # course_button_exists, course_button = is_buy_now_button_exist()
+                    # if course_button_exists:
+                    #     course_button.click()
+                    #     time.sleep(30)  # Wait for navigation to course page
+                    # else:
+                    #     logger.warning(
+                    #         "Enroll Now / Go to course button not found. Please enroll in /"
+                    #         " buy the course and navigate to the first lecture,"
+                    #         " then restart the program."
+                    #     )
+                    #     exit()
+                # course_button_exists = False
+                course_button_exists, course_button = is_buy_now_button_exist()
+                if course_button_exists:
+                    course_button.click()
+                    time.sleep(30)  # Wait for navigation to course page
+                main(index=media_index)
+            else:
+                logger.info("No more media URLs found in configuration.")
+                log_file_handler.write_separator()
+                exit()
         else:
-            logger.info("No more media URLs found in configuration.")
+            main()
             log_file_handler.write_separator()
             exit()
     except Exception:
