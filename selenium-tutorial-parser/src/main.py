@@ -505,6 +505,7 @@ def main(index: int = 0) -> None:
         logger.info(f"Sections to stop: {section_to_stop}")
     if not is_fullscreen():
         toggle_fullscreen()
+    # count = 0
     while True:
         section, title = get_current_media_info()
         if is_current_page_video():
@@ -544,6 +545,10 @@ def main(index: int = 0) -> None:
                 logger.error("This is not a text media. Skipping...")
         if not go_to_next_media():
             break
+        # count += 1
+        # if count >= 1:
+        #     logger.warning("Processed 1 media item, stopping to prevent infinite loop.")
+        #     break
 
 
 if __name__ == "__main__":
