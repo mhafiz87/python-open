@@ -3,6 +3,7 @@ import re
 import time
 import traceback
 from enum import StrEnum
+from pathlib import Path
 
 from rapidfuzz import fuzz, process
 from selenium import webdriver
@@ -36,6 +37,7 @@ class Element(StrEnum):
     Lecture = (
         r'//span[@class = "curriculum-item-link--curriculum-item-title-content--S-urg"]'
     )
+    Lectures = r'//li[contains(@class, "curriculum-item-link--curriculum-item--OVP5S")]'
     LectureProgress = r'//input[@data-purpose = "progress-toggle-button"]'
     PauseButton = r'//button[@data-purpose = "pause-button"]'
     PlayButton = r'//button[@data-purpose = "play-button"]'
@@ -53,6 +55,12 @@ class Element(StrEnum):
     )
     LastLesson = r'//h2[@data-purpose = "primary-message"]'
     ProgressBar = r'//div[@data-purpose="video-progress-buffer"]'
+
+
+class MediaType(StrEnum):
+    VIDEO = "video"
+    ARTICLE = "article"
+    UNKNOWN = "unknown"
 
 
 class Automate:
@@ -124,12 +132,27 @@ class Automate:
                     title = re.sub(r"[^\w\s-]", "", item.replace(": ", " - "))
             logger.info(f"Current media info - Section: {section}, Title: {title}")
             return section, title
-        except Exception:
-            traceback.print_exc()
-            logger.error("Unable to find media title.")
+        except Exception as error:
+            # traceback.print_exc()
+            logger.warning("Unable to find media title.")
+            logger.warning(f"{type(error).__name__}")
             return section, title
 
     def get_all_lectures(self) -> list[str]:
+        """
+        Retrieve all lecture titles from the current page.
+
+        This method finds all lecture elements on the page using the configured XPath selector,
+        extracts their text content, and formats them by replacing ": " with " - ".
+
+        Returns:
+            list[str]: A list of formatted lecture titles as strings.
+
+        Example:
+            >>> lectures = self.get_all_lectures()
+            >>> print(lectures)
+            ['1. Introduction', '2. Advanced Topics']
+        """
         lectures: list[str] = []
         elements = self.driver.find_elements(
             by=By.XPATH,
@@ -139,23 +162,94 @@ class Automate:
             lectures.append(element.text.replace(": ", " - "))
         return lectures
 
-    def is_lecture_completed(self, lecture: str) -> bool:
+    def get_current_lecture_element(self) -> WebElement | None:
+        try:
+            elements = self.driver.find_elements(
+                by=By.XPATH,
+                value=Element.Lectures,
+            )
+            print(len(elements))
+            for element in elements:
+                if "is-current" in element.get_attribute("class"):
+                    return element
+            return None
+        except Exception as error:
+            # traceback.print_exc()
+            logger.warning("Unable to find current lecture element.")
+            # logger.error(f"{type(error).__name__}: {error}")
+            logger.warning(f"{type(error).__name__}")
+            return None
+
+    def get_current_media_type(self) -> MediaType:
+        """
+        Determines the media type of the current lecture element.
+
+        Extracts the media type by finding the SVG use element within the current
+        lecture's bottom row and examining its 'xlink:href' attribute. Identifies
+        whether the current content is a video, article, or unknown media type.
+
+        Returns:
+            MediaType: The type of media for the current lecture. Can be:
+                - MediaType.VIDEO if the xlink:href contains 'video'
+                - MediaType.ARTICLE if the xlink:href contains 'article'
+                - MediaType.UNKNOWN if the media type cannot be determined or
+                  an exception occurs during detection
+
+        Logs:
+            - info: The detected media type icon name extracted from the xlink:href
+            - warning: Error details if the media type cannot be determined
+        """
+        try:
+            temp = self.get_current_lecture_element()
+            child = temp.find_element(
+                By.XPATH,
+                ".//*[div[contains(@class, 'curriculum-item-link--bottom-row--AVBnl')]]//*[local-name()='use']",
+            )
+            logger.info(
+                f"Current media type: {child.get_attribute('xlink:href').split('#icon-')[-1]}"
+            )
+            if "video" in child.get_attribute("xlink:href").lower():
+                return MediaType.VIDEO
+            elif "article" in child.get_attribute("xlink:href").lower():
+                return MediaType.ARTICLE
+            return MediaType.UNKNOWN
+        except Exception as error:
+            # traceback.print_exc()
+            logger.warning("Unable to determine current media type.")
+            # logger.warning(f"{type(error).__name__}: {error}")
+            logger.warning(f"{type(error).__name__}")
+            return MediaType.UNKNOWN
+
+    def get_lecture_element_by_title(self, title: str) -> WebElement | None:
         try:
             lectures = self.driver.find_elements(
                 by=By.XPATH,
                 value=Element.Lecture,
             )
             target_lecture, score, index = process.extractOne(
-                lecture,
+                title,
                 [lecture.text for lecture in lectures],
                 scorer=fuzz.token_sort_ratio,
             )
             logger.info(
                 f"Target lecture: {target_lecture}, Score: {score}, Index: {index}"
             )
+            for element in lectures:
+                if element.text == target_lecture:
+                    return element
+            return None
+        except Exception as error:
+            # traceback.print_exc()
+            logger.error(f"Unable to find lecture element by title: {title}")
+            logger.error(f"{type(error).__name__}: {error}")
+            return None
+
+    def is_lecture_completed(self, lecture: str) -> bool:
+        try:
+            element = self.get_lecture_element_by_title(lecture)
             check_label = self.driver.find_element(
                 By.XPATH,
-                rf'//input[contains(@aria-label, "Mark lecture {target_lecture.split(". ")[1]}")]',
+                rf'//input[contains(@aria-label, "Mark lecture {element.text.split(". ")[1]}")]',
             )
             logger.info(check_label.get_attribute("aria-label"))
             if "incomplete" in check_label.get_attribute("aria-label").lower():
@@ -317,6 +411,59 @@ class Automate:
             logger.warning("Unable to get media time.")
             return None
 
+    def restart_media(self) -> None:
+        try:
+            element = WebDriverWait(self.driver, 0.5).until(
+                EC.presence_of_element_located((By.XPATH, Element.VideoClass))
+            )
+            self.driver.execute_script("arguments[0].currentTime = 0;", element)
+            logger.info("Media has been restarted to the beginning.")
+        except Exception:
+            logger.error("Unable to restart media.")
+
+    def save_text_content(self, output: str) -> None:
+        try:
+            element = WebDriverWait(self.driver, 2).until(
+                EC.presence_of_element_located((By.XPATH, Element.TextViewerClass))
+            )
+            logger.info("Media contains text content. Saving...")
+            inner_html = element.get_attribute("innerHTML")
+            text_content = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>{output.split("/")[-1]}</title>
+            </head>
+            <body>
+                {inner_html}
+            </body>
+            </html>
+            """
+            Path(output).parent.mkdir(parents=True, exist_ok=True)
+            with open(f"{output}.html", "w", encoding="utf-8") as f:
+                f.write(text_content)
+            logger.info(f"Saved text content to {output}.html")
+        except Exception as error:
+            # print(traceback.format_exc())
+            logger.error("Unable to save text content.")
+            logger.error(f"{type(error).__name__}: {error}")
+
+    def go_to_next_media(self) -> bool:
+        right_button = self.is_next_right_button_exist()
+        if right_button[0]:
+            right_button[1].click()
+            logger.info("Navigated to next media.")
+            time.sleep(10)
+            return True
+        else:
+            if self.is_last_screen():
+                logger.info("Reached the last lesson screen. Stopping process.")
+                return False
+            else:
+                logger.warning("Next button not found. Possibly reached the end.")
+                return False
+
     def send_spacebar(self) -> None:
         self.driver.find_element(By.TAG_NAME, "body").send_keys(Keys.SPACE)
 
@@ -352,6 +499,7 @@ if __name__ == "__main__":
     automate.get_course_name()
     section, lecture = automate.get_current_media_info()
     print(lecture)
-    # print(automate.get_all_lectures())
     automate.is_lecture_completed(lecture)
     automate.show_time_position()
+    automate.get_current_media_type()
+    automate.is_ui_visible()
