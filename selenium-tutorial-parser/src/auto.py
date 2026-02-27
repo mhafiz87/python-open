@@ -4,6 +4,7 @@ import time
 import traceback
 from enum import StrEnum
 
+from rapidfuzz import fuzz, process
 from selenium import webdriver
 from selenium.webdriver import ActionChains
 from selenium.webdriver.chrome.options import Options
@@ -28,6 +29,14 @@ class Element(StrEnum):
     CourseTitle = r'//h1[@data-purpose = "course-header-title"]'
     BuyNowButton = r"//button[@data-purpose='buy-now-button'][.//*[contains(text(), 'Enroll now') or contains(text(), 'Go to course')]]"
     Title = r'//section[@class = "lecture-view--container--mrZSm"]'
+    ProgressDisplay = r'//div[@data-purpose = "progress-display"]'
+    CurrentTime = r'span[@data-purpose = "current-time"]'
+    Duration = r'span[@data-purpose = "duration"]'
+    Section = r'//span[@class = "ud-accordion-panel-title"]'
+    Lecture = (
+        r'//span[@class = "curriculum-item-link--curriculum-item-title-content--S-urg"]'
+    )
+    LectureProgress = r'//input[@data-purpose = "progress-toggle-button"]'
     PauseButton = r'//button[@data-purpose = "pause-button"]'
     PlayButton = r'//button[@data-purpose = "play-button"]'
     CancelButton = r'//button[@data-purpose = "cancel-button"]'
@@ -74,11 +83,29 @@ class Automate:
         sections: list[str] = []
         elements = self.driver.find_elements(
             by=By.XPATH,
-            value=('//span[@class = "truncate-with-tooltip--ellipsis--YJw4N "]'),
+            value=Element.Section,
         )
         for element in elements:
             sections.append(element.text.replace(": ", " - "))
         return sections
+
+    def open_all_sections(self) -> None:
+        sections = WebDriverWait(self.driver, 30).until(
+            EC.presence_of_all_elements_located((By.XPATH, Element.Section))
+        )
+        for section in sections:
+            button = section.find_element(By.XPATH, "..")
+            try:
+                if button.get_attribute("aria-expanded") == "false":
+                    logger.info(f"{section.text} is collapsed. Expanding...")
+                    button.click()
+                    logger.info(f"Opened section: {section.text}")
+                    time.sleep(1)
+                else:
+                    logger.info(f"{section.text} is already expanded.")
+            except Exception:
+                logger.error(f"Failed to open section: {section.text}")
+                traceback.print_exc()
 
     def get_current_media_info(self) -> tuple[str, str]:
         section = ""
@@ -95,11 +122,51 @@ class Automate:
                     section = re.sub(r"[^\w\s-]", "", item.replace(": ", " - "))
                 elif index == 1:
                     title = re.sub(r"[^\w\s-]", "", item.replace(": ", " - "))
+            logger.info(f"Current media info - Section: {section}, Title: {title}")
             return section, title
         except Exception:
             traceback.print_exc()
-            print("Unable to find media title.")
+            logger.error("Unable to find media title.")
             return section, title
+
+    def get_all_lectures(self) -> list[str]:
+        lectures: list[str] = []
+        elements = self.driver.find_elements(
+            by=By.XPATH,
+            value=Element.Lecture,
+        )
+        for element in elements:
+            lectures.append(element.text.replace(": ", " - "))
+        return lectures
+
+    def is_lecture_completed(self, lecture: str) -> bool:
+        try:
+            lectures = self.driver.find_elements(
+                by=By.XPATH,
+                value=Element.Lecture,
+            )
+            target_lecture, score, index = process.extractOne(
+                lecture,
+                [lecture.text for lecture in lectures],
+                scorer=fuzz.token_sort_ratio,
+            )
+            logger.info(
+                f"Target lecture: {target_lecture}, Score: {score}, Index: {index}"
+            )
+            check_label = self.driver.find_element(
+                By.XPATH,
+                rf'//input[contains(@aria-label, "Mark lecture {target_lecture.split(". ")[1]}")]',
+            )
+            logger.info(check_label.get_attribute("aria-label"))
+            if "incomplete" in check_label.get_attribute("aria-label").lower():
+                logger.info(f"{lecture} is completed.")
+                return True
+            logger.info(f"{lecture} is not completed.")
+            return False
+        except Exception:
+            traceback.print_exc()
+            logger.error(f"Unable to determine {lecture} progress.")
+            return False
 
     def is_current_page_video(self) -> bool:
         try:
@@ -187,7 +254,7 @@ class Automate:
             WebDriverWait(self.driver, 2).until(
                 EC.presence_of_element_located((By.XPATH, Element.CancelButton))
             )
-            print("Media has ended.")
+            logger.info("Media has ended.")
             return True
         except Exception:
             # print("Media is playing...")
@@ -224,6 +291,32 @@ class Automate:
         # ActionChains(self.driver).move_by_offset(200, 200).perform()
         time.sleep(5)
 
+    def show_time_position(self, clear_line: bool = True) -> None:
+        LINE_UP = "\033[1A"
+        LINE_CLEAR = "\x1b[2K"
+        try:
+            times = self.get_media_time()
+            if times is not None:
+                current_time, duration = times
+                if clear_line:
+                    print(LINE_UP + LINE_CLEAR, end="")
+                print(f"Current Time: {current_time} / Duration: {duration}")
+        except Exception:
+            logger.warning("Unable to get time position.")
+
+    def get_media_time(self) -> tuple[str, str] | None:
+        try:
+            progress_display = WebDriverWait(automate.driver, 5).until(
+                EC.presence_of_element_located((By.XPATH, Element.ProgressDisplay))
+            )
+            times = progress_display.find_elements(By.XPATH, "./*")
+            current_time = times[0].get_attribute("textContent")
+            duration = times[2].get_attribute("textContent")
+            return current_time, duration
+        except Exception:
+            logger.warning("Unable to get media time.")
+            return None
+
     def send_spacebar(self) -> None:
         self.driver.find_element(By.TAG_NAME, "body").send_keys(Keys.SPACE)
 
@@ -254,4 +347,11 @@ class Automate:
 
 
 if __name__ == "__main__":
-    pass
+    automate = Automate()
+    automate.attach_driver()
+    automate.get_course_name()
+    section, lecture = automate.get_current_media_info()
+    print(lecture)
+    # print(automate.get_all_lectures())
+    automate.is_lecture_completed(lecture)
+    automate.show_time_position()

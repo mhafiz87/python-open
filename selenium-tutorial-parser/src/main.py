@@ -373,7 +373,7 @@ def show_time_position(clear_line: bool = True) -> tuple[str, str]:
         )
         return seconds_to_time(current_time), seconds_to_time(duration)
     except Exception:
-        print("Unable to get time position.")
+        logger.warning("Unable to get time position.")
         return "", ""
 
 
