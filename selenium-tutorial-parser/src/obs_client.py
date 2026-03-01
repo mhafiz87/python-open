@@ -82,6 +82,24 @@ class ObsClient:
             traceback.print_exc()
             raise
 
+    def start_record(self) -> None:
+        try:
+            self.obs_client.start_record()
+            logger.info("Started recording")
+        except Exception as e:
+            logger.error(f"Failed to start recording: {e}")
+            traceback.print_exc()
+            raise
+
+    def stop_record(self) -> None:
+        try:
+            self.obs_client.stop_record()
+            logger.info("Stopped recording")
+        except Exception as e:
+            logger.error(f"Failed to stop recording: {e}")
+            traceback.print_exc()
+            raise
+
     @staticmethod
     def find_pids_by_name(process_name: str = "obs64.exe") -> list[int]:
         """Return a list of PIDs matching the process name."""

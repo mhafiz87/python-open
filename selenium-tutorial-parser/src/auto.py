@@ -31,14 +31,15 @@ class Element(StrEnum):
     BuyNowButton = r"//button[@data-purpose='buy-now-button'][.//*[contains(text(), 'Enroll now') or contains(text(), 'Go to course')]]"
     Title = r'//section[@class = "lecture-view--container--mrZSm"]'
     ProgressDisplay = r'//div[@data-purpose = "progress-display"]'
-    CurrentTime = r'span[@data-purpose = "current-time"]'
-    Duration = r'span[@data-purpose = "duration"]'
+    CurrentTime = r'//span[@data-purpose = "current-time"]'
+    Duration = r'//span[@data-purpose = "duration"]'
     Section = r'//span[@class = "ud-accordion-panel-title"]'
     Lecture = (
         r'//span[@class = "curriculum-item-link--curriculum-item-title-content--S-urg"]'
     )
     Lectures = r'//li[contains(@class, "curriculum-item-link--curriculum-item--OVP5S")]'
     LectureProgress = r'//input[@data-purpose = "progress-toggle-button"]'
+    Caption = r'//div[@data-purpose = "captions-cue-text"]'
     PauseButton = r'//button[@data-purpose = "pause-button"]'
     PlayButton = r'//button[@data-purpose = "play-button"]'
     CancelButton = r'//button[@data-purpose = "cancel-button"]'
@@ -80,6 +81,25 @@ class Automate:
         )
 
     def get_course_name(self) -> str:
+        """
+        Retrieves and sanitizes the course name from the web page.
+
+        This method waits for the course title element to be present on the page,
+        extracts its text, sanitizes it by removing special characters (except
+        hyphens and spaces), and replaces colons with hyphens for better
+        file system compatibility.
+
+        Returns:
+            str: The sanitized course name with special characters removed and
+                 colons replaced with hyphens.
+
+        Raises:
+            TimeoutException: If the course title element is not found within 30 seconds.
+
+        Example:
+            >>> course_name = self.get_course_name()
+            >>> print(course_name)  # "Python Programming - Advanced Techniques"
+        """
         element = WebDriverWait(self.driver, 30).until(
             EC.presence_of_element_located((By.XPATH, Element.CourseTitle))
         )
@@ -111,11 +131,42 @@ class Automate:
                     time.sleep(1)
                 else:
                     logger.info(f"{section.text} is already expanded.")
-            except Exception:
-                logger.error(f"Failed to open section: {section.text}")
-                traceback.print_exc()
+            except Exception as error:
+                logger.error(f"Unable to open section: {section.text}")
+                logger.error(f"{type(error).__name__}")
+                # traceback.print_exc()
 
     def get_current_media_info(self) -> tuple[str, str]:
+        """
+        Retrieves the current media section and lecture title from the web page.
+
+        This method waits for the title element to be present on the page, extracts
+        the aria-label attribute, and parses it to get the section and lecture information.
+        The parsed information is cleaned by removing special characters and replacing
+        colons with hyphens.
+
+        Returns:
+            tuple[str, str]: A tuple containing:
+                - section (str): The section information (e.g., "Section 1 - Introduction").
+                                Empty string if unable to retrieve.
+                - title (str): The lecture title (e.g., "Lecture 1 - Getting Started").
+                              Empty string if unable to retrieve.
+
+        Raises:
+            No exceptions are raised. All exceptions are caught and logged as warnings.
+
+        Example:
+            >>> section, title = self.get_current_media_info()
+            >>> print(f"Section: {section}, Title: {title}")
+            Section: Section 1 - Introduction, Title: Lecture 1 - Getting Started
+
+        Note:
+            - The method expects the aria-label to match the pattern:
+              "Section {number}..., Lecture {number}..."
+            - Special characters (except word characters, spaces, and hyphens) are removed
+              from the section and title strings.
+            - Waits up to 2 seconds for the element to be present before timing out.
+        """
         section = ""
         title = ""
         section_pattern = r"^(Section \d{1,3}.*), (Lecture \d{1,3}.*).*"
@@ -168,7 +219,6 @@ class Automate:
                 by=By.XPATH,
                 value=Element.Lectures,
             )
-            print(len(elements))
             for element in elements:
                 if "is-current" in element.get_attribute("class"):
                     return element
@@ -345,7 +395,7 @@ class Automate:
 
     def is_media_ended(self) -> bool:
         try:
-            WebDriverWait(self.driver, 2).until(
+            WebDriverWait(self.driver, 0.1).until(
                 EC.presence_of_element_located((By.XPATH, Element.CancelButton))
             )
             logger.info("Media has ended.")
@@ -385,7 +435,7 @@ class Automate:
         # ActionChains(self.driver).move_by_offset(200, 200).perform()
         time.sleep(5)
 
-    def show_time_position(self, clear_line: bool = True) -> None:
+    def show_time_position(self, clear_line: bool = True) -> tuple[str, str]:
         LINE_UP = "\033[1A"
         LINE_CLEAR = "\x1b[2K"
         try:
@@ -395,21 +445,58 @@ class Automate:
                 if clear_line:
                     print(LINE_UP + LINE_CLEAR, end="")
                 print(f"Current Time: {current_time} / Duration: {duration}")
+                return current_time, duration
+            return "", ""
         except Exception:
             logger.warning("Unable to get time position.")
+            return "", ""
 
     def get_media_time(self) -> tuple[str, str] | None:
+        """
+        Retrieve the current playback time and total duration from the media player UI.
+
+        This method reads the text content of the elements identified by
+        `Element.CurrentTime` and `Element.Duration` using Selenium.
+
+        Returns:
+            tuple[str, str] | None:
+                A tuple containing `(current_time, duration)` when both values are
+                successfully retrieved; otherwise `None` if any error occurs.
+
+        Side Effects:
+            Logs a warning message ("Unable to get media time.") when retrieval fails.
+        """
         try:
-            progress_display = WebDriverWait(automate.driver, 5).until(
+            progress_element = WebDriverWait(self.driver, 0.1).until(
                 EC.presence_of_element_located((By.XPATH, Element.ProgressDisplay))
             )
-            times = progress_display.find_elements(By.XPATH, "./*")
-            current_time = times[0].get_attribute("textContent")
-            duration = times[2].get_attribute("textContent")
+            # progress_element = self.driver.find_element(
+            #     (By.XPATH, Element.ProgressDisplay)
+            # )
+            children = progress_element.find_elements(By.XPATH, "./*")
+            current_time = children[0].get_attribute("textContent")
+            duration = children[2].get_attribute("textContent")
+            # current_time = automate.driver.find_element(
+            #     By.XPATH, Element.CurrentTime
+            # ).get_attribute("textContent")
+            # duration = automate.driver.find_element(
+            #     By.XPATH, Element.Duration
+            # ).get_attribute("textContent")
             return current_time, duration
         except Exception:
             logger.warning("Unable to get media time.")
             return None
+
+    def get_caption(self) -> str:
+        try:
+            caption = self.driver.find_element(By.XPATH, Element.Caption).get_attribute(
+                "textContent"
+            )
+            # print(f"Caption: {caption}")
+            return caption
+        except Exception:
+            logger.warning("Unable to get caption.")
+            return ""
 
     def restart_media(self) -> None:
         try:
@@ -492,14 +579,16 @@ class Automate:
         else:
             return f"{hours:02d}:{minutes:02d}:{int(remaining_seconds):02d}"
 
-
 if __name__ == "__main__":
     automate = Automate()
     automate.attach_driver()
-    automate.get_course_name()
-    section, lecture = automate.get_current_media_info()
-    print(lecture)
-    automate.is_lecture_completed(lecture)
-    automate.show_time_position()
-    automate.get_current_media_type()
-    automate.is_ui_visible()
+    # automate.driver.refresh()
+    # automate.go_to_next_media()
+    # automate.get_course_name()
+    # section, lecture = automate.get_current_media_info()
+    # print(lecture)
+    # automate.is_lecture_completed(lecture)
+    # automate.show_time_position()
+    # automate.get_current_media_type()
+    # automate.is_ui_visible()
+    # automate.get_caption()
