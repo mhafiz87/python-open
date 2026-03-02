@@ -12,8 +12,10 @@
 
    ```powershell
    chrome --remote-debugging-port=9222 --user-data-dir="$HOME/temp/chrome_profile"
+   chrome --remote-debugging-port=9222 --remote-allow-origins=* --user-data-dir="$HOME/temp/chrome_profile" &
    # or for always fullscreen
    chrome --kiosk --remote-debugging-port=9222 --user-data-dir="$HOME/temp/chrome_profile"
+   chrome --kiosk --remote-debugging-port=9222 --remote-allow-origins=* --user-data-dir="$HOME/temp/chrome_profile" &
    ```
 
 3. Login into website and go into the target url.

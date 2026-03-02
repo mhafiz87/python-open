@@ -407,7 +407,7 @@ class Automate:
             logger.info("Media has ended.")
             return True
         except Exception:
-            print("Unable to find cancel button...")
+            # print("Unable to find cancel button...")
             try:
                 WebDriverWait(self.driver, 0.1).until(
                     EC.presence_of_element_located((By.XPATH, Element.DontAskButton))
@@ -415,9 +415,10 @@ class Automate:
                 logger.info("Media has ended.")
                 return True
             except Exception:
-                logger.info(
-                    "Unable to find end of media indicators. Assuming media is still playing."
-                )
+                pass
+                # logger.info(
+                #     "Unable to find end of media indicators. Assuming media is still playing."
+                # )
         return False
 
     def is_last_screen(self) -> bool:
