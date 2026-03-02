@@ -404,14 +404,21 @@ class Automate:
             WebDriverWait(self.driver, 0.1).until(
                 EC.presence_of_element_located((By.XPATH, Element.CancelButton))
             )
-            WebDriverWait(self.driver, 0.1).until(
-                EC.presence_of_element_located((By.XPATH, Element.DontAskButton))
-            )
             logger.info("Media has ended.")
             return True
         except Exception:
-            # print("Media is playing...")
-            return False
+            print("Unable to find cancel button...")
+            try:
+                WebDriverWait(self.driver, 0.1).until(
+                    EC.presence_of_element_located((By.XPATH, Element.DontAskButton))
+                )
+                logger.info("Media has ended.")
+                return True
+            except Exception:
+                logger.info(
+                    "Unable to find end of media indicators. Assuming media is still playing."
+                )
+        return False
 
     def is_last_screen(self) -> bool:
         try:
@@ -607,15 +614,16 @@ class Automate:
 
 if __name__ == "__main__":
     automate = Automate()
-    # automate.attach_driver()
+    automate.attach_driver()
     # automate.get_caption()
+    automate.is_media_ended()
     # automate.driver.refresh()
     # automate.go_to_next_media()
     # automate.get_course_name()
     # section, lecture = automate.get_current_media_info()
     # print(lecture)
     # automate.is_lecture_completed(lecture)
-    automate.show_time_position()
+    # automate.show_time_position()
     # automate.get_current_media_type()
     # automate.is_ui_visible()
     # automate.get_caption()
