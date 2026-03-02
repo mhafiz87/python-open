@@ -78,6 +78,7 @@ if __name__ == "__main__":
     automate.attach_driver()
     # TODO: [ ] open url in config, handle go to course page and open first section
     course_name = automate.get_course_name()
+    (ROOT_OUTPUT_DIR / course_name).mkdir(parents=True, exist_ok=True)
     automate.open_all_sections()
     while True:
         if automate.is_fullscreen():
