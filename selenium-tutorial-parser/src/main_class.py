@@ -13,7 +13,7 @@ from logger import log_file_handler, logger
 from obs_client import ObsClient
 
 ROOT_OUTPUT_DIR = get_root_output_dir()
-FRAME_CHECK_INTERVAL = 5
+FRAME_CHECK_INTERVAL = 30
 IMAGE_1_NAME = Path(ROOT_OUTPUT_DIR / "debug_screenshot_1.png").as_posix()
 IMAGE_2_NAME = Path(ROOT_OUTPUT_DIR / "debug_screenshot_2.png").as_posix()
 frame_counter: int = 1
@@ -21,7 +21,7 @@ media_stop_event = threading.Event()
 media_stop_event.clear()
 
 
-def handle_frame_freeze(obs: ObsClient, media: str) -> None:
+def handle_frame_freeze(obs: ObsClient, media: str) -> bool:
     global frame_counter
     if frame_counter % 2 == 1:
         obs.get_obs_screenshot((ROOT_OUTPUT_DIR / IMAGE_1_NAME).as_posix())
@@ -39,28 +39,28 @@ def handle_frame_freeze(obs: ObsClient, media: str) -> None:
         logger.warning(f"Stopping {media} due to freeze.")
         logger.warning("Stopping process.")
         obs.stop_record()
-        exit(1)
+    return freeze
 
 
-def check_time_and_frame(
-    obs: ObsClient,
-    automate: Automate,
-    new_media: bool,
-    section: str,
-    lecture: str,
-) -> None:
+def check_frame_freeze(obs: ObsClient, check_time: float, media: str) -> bool:
+    frame_check_time = time.monotonic()
+    if frame_check_time - check_time >= FRAME_CHECK_INTERVAL:
+        if handle_frame_freeze(obs, media):
+            exit(1)
+        return False
+    return True
+
+
+def check_time(obs: ObsClient, automate: Automate, new_media: bool, media: str) -> bool:
     obs.get_obs_screenshot(IMAGE_2_NAME)
-    frame_check_initial_time: float = time.monotonic()
     current_time, duration = automate.show_time_position(clear_line=not new_media)
     if current_time == duration:
         logger.warning(
             "Current time equals duration, media might have ended or paused."
         )
-        logger.warning(f"Stopping media: {section}/{lecture}")
-    frame_check_time = time.monotonic()
-    if frame_check_time - frame_check_initial_time >= FRAME_CHECK_INTERVAL:
-        handle_frame_freeze(obs, f"{section}/{lecture}")
-        frame_check_initial_time = frame_check_time
+        logger.warning(f"Stopping media: {media}")
+        return False
+    return True
 
 
 if __name__ == "__main__":
@@ -80,17 +80,23 @@ if __name__ == "__main__":
     course_name = automate.get_course_name()
     automate.open_all_sections()
     while True:
-        if not automate.is_fullscreen():
+        if automate.is_fullscreen():
             automate.toggle_fullscreen()
         # TODO: [ ] handle focus
         section, lecture = automate.get_current_media_info()
         obs.set_output_filename(f"{section}/{lecture}")
         current_media_type = automate.get_current_media_type()
+        (ROOT_OUTPUT_DIR / section).mkdir(parents=True, exist_ok=True)
         if current_media_type == MediaType.ARTICLE:
             automate.save_text_content(
                 output=Path(ROOT_OUTPUT_DIR / section / f"{lecture}.txt").as_posix()
             )
         elif current_media_type == MediaType.VIDEO:
+            automate.get_caption(
+                filename=Path(ROOT_OUTPUT_DIR / section / f"{lecture}.vtt").as_posix()
+            )
+            if not automate.is_fullscreen():
+                automate.toggle_fullscreen()
             for _ in range(5):
                 if automate.is_media_paused():
                     automate.send_spacebar()
@@ -111,12 +117,18 @@ if __name__ == "__main__":
             automate.restart_media()
             obs.start_record()
             obs.get_obs_screenshot(IMAGE_2_NAME)
+            frame_check_time: float = time.monotonic()
             new_media = True
             while True:
                 if automate.is_media_ended():
                     logger.info(f"Media ended: {section}/{lecture}")
                     break
-                check_time_and_frame(obs, automate, new_media, section, lecture)
+                if not check_frame_freeze(
+                    obs, frame_check_time, f"{section}/{lecture}"
+                ):
+                    frame_check_time = time.monotonic()
+                if not check_time(obs, automate, new_media, f"{section}/{lecture}"):
+                    break
                 new_media = False
                 time.sleep(1)
             obs.stop_record()

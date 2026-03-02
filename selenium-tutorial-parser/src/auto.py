@@ -1,10 +1,12 @@
 # ruff: noqa: F401
+import json
 import re
 import time
 import traceback
 from enum import StrEnum
 from pathlib import Path
 
+import PyChromeDevTools
 from rapidfuzz import fuzz, process
 from selenium import webdriver
 from selenium.webdriver import ActionChains
@@ -40,6 +42,7 @@ class Element(StrEnum):
     Lectures = r'//li[contains(@class, "curriculum-item-link--curriculum-item--OVP5S")]'
     LectureProgress = r'//input[@data-purpose = "progress-toggle-button"]'
     Caption = r'//div[@data-purpose = "captions-cue-text"]'
+    DontAskButton = r'//button[@data-purpose = "dont-ask-button"]'
     PauseButton = r'//button[@data-purpose = "pause-button"]'
     PlayButton = r'//button[@data-purpose = "play-button"]'
     CancelButton = r'//button[@data-purpose = "cancel-button"]'
@@ -79,6 +82,9 @@ class Automate:
             f"Attached to existing Chrome session. Current URL: "
             f"\033[4;34m{self.driver.current_url}\033[0m"
         )
+        self.chromePCD = PyChromeDevTools.ChromeInterface()
+        self.chromePCD.Network.enable()
+        self.chromePCD.Page.enable()
 
     def get_course_name(self) -> str:
         """
@@ -336,7 +342,7 @@ class Automate:
                 logger.info("Currently in fullscreen mode.")
                 return True
         except Exception:
-            traceback.print_exc()
+            # traceback.print_exc()
             logger.error("Unable to determine fullscreen mode. Assuming in fullscreen.")
             return True
 
@@ -349,7 +355,7 @@ class Automate:
             element.click()
             logger.info("Toggled fullscreen mode.")
         except Exception:
-            traceback.print_exc()
+            # traceback.print_exc()
             logger.error("Unable to toggle fullscreen mode.")
 
     def is_next_right_button_exist(self) -> tuple[bool, WebElement | None]:
@@ -397,6 +403,9 @@ class Automate:
         try:
             WebDriverWait(self.driver, 0.1).until(
                 EC.presence_of_element_located((By.XPATH, Element.CancelButton))
+            )
+            WebDriverWait(self.driver, 0.1).until(
+                EC.presence_of_element_located((By.XPATH, Element.DontAskButton))
             )
             logger.info("Media has ended.")
             return True
@@ -467,36 +476,19 @@ class Automate:
             Logs a warning message ("Unable to get media time.") when retrieval fails.
         """
         try:
-            progress_element = WebDriverWait(self.driver, 0.1).until(
-                EC.presence_of_element_located((By.XPATH, Element.ProgressDisplay))
+            element = WebDriverWait(self.driver, 0.25).until(
+                EC.presence_of_element_located((By.XPATH, Element.VideoClass))
             )
-            # progress_element = self.driver.find_element(
-            #     (By.XPATH, Element.ProgressDisplay)
-            # )
-            children = progress_element.find_elements(By.XPATH, "./*")
-            current_time = children[0].get_attribute("textContent")
-            duration = children[2].get_attribute("textContent")
-            # current_time = automate.driver.find_element(
-            #     By.XPATH, Element.CurrentTime
-            # ).get_attribute("textContent")
-            # duration = automate.driver.find_element(
-            #     By.XPATH, Element.Duration
-            # ).get_attribute("textContent")
+            current_time = self.seconds_to_time(
+                self.driver.execute_script("return arguments[0].currentTime;", element)
+            )
+            duration = self.seconds_to_time(
+                self.driver.execute_script("return arguments[0].duration;", element)
+            )
             return current_time, duration
         except Exception:
             logger.warning("Unable to get media time.")
             return None
-
-    def get_caption(self) -> str:
-        try:
-            caption = self.driver.find_element(By.XPATH, Element.Caption).get_attribute(
-                "textContent"
-            )
-            # print(f"Caption: {caption}")
-            return caption
-        except Exception:
-            logger.warning("Unable to get caption.")
-            return ""
 
     def restart_media(self) -> None:
         try:
@@ -554,6 +546,40 @@ class Automate:
     def send_spacebar(self) -> None:
         self.driver.find_element(By.TAG_NAME, "body").send_keys(Keys.SPACE)
 
+    def get_caption(self, filename: str) -> None:
+        self.driver.refresh()
+        time.sleep(10)  # import time
+        messages = self.chromePCD.pop_messages()
+
+        for m in messages:
+            # print(m)
+            if "method" in m and m["method"] == "Network.responseReceived":
+                try:
+                    url = m["params"]["response"]["url"]
+                    if ".vtt" in url:
+                        # print(f"{m['params']['requestId']}")
+                        requestId = m["params"]["requestId"]
+                        body_response = self.chromePCD.Network.getResponseBody(
+                            requestId=requestId
+                        )
+                        # print(body_response[0].get("result", {}).get("body", ""))
+                        if body_response[0] is None:
+                            logger.warning(
+                                "Received empty response body for caption request."
+                            )
+                            continue
+                        with open(filename, "w", encoding="utf-8") as f:
+                            f.write(body_response[0].get("result", {}).get("body", ""))
+                            logger.info(f"Saved caption to {filename}")
+                        break
+                except Exception as error:
+                    logger.error(
+                        f"Error while processing network response: {type(error).__name__}: {error}"
+                    )
+                    traceback.print_exc()
+        else:
+            logger.warning("Unable to find subtitle file in network responses.")
+
     @staticmethod
     def seconds_to_time(seconds, precision=2):
         """
@@ -581,14 +607,15 @@ class Automate:
 
 if __name__ == "__main__":
     automate = Automate()
-    automate.attach_driver()
+    # automate.attach_driver()
+    # automate.get_caption()
     # automate.driver.refresh()
     # automate.go_to_next_media()
     # automate.get_course_name()
     # section, lecture = automate.get_current_media_info()
     # print(lecture)
     # automate.is_lecture_completed(lecture)
-    # automate.show_time_position()
+    automate.show_time_position()
     # automate.get_current_media_type()
     # automate.is_ui_visible()
     # automate.get_caption()
