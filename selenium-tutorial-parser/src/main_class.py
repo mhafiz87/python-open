@@ -1,4 +1,7 @@
 # ruff: noqa: F401
+# TODO: Save current media for if stuck in loading, auto reload current course then navigate to current media
+# TODO: Config; if `medias` 1st element is empty string, assume already in course page.
+# TODO: Config; if `medias` element is not empty string, load course name, then navigate to media
 import threading
 import time
 from datetime import datetime
@@ -13,7 +16,7 @@ from logger import log_file_handler, logger
 from obs_client import ObsClient
 
 ROOT_OUTPUT_DIR = get_root_output_dir()
-FRAME_CHECK_INTERVAL = 60
+FRAME_CHECK_INTERVAL = 30
 IMAGE_1_NAME = Path(ROOT_OUTPUT_DIR / "debug_screenshot_1.png").as_posix()
 IMAGE_2_NAME = Path(ROOT_OUTPUT_DIR / "debug_screenshot_2.png").as_posix()
 frame_counter: int = 1
