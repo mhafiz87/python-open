@@ -59,6 +59,9 @@ class Element(StrEnum):
     )
     LastLesson = r'//h2[@data-purpose = "primary-message"]'
     ProgressBar = r'//div[@data-purpose="video-progress-buffer"]'
+    NextCurriculum = (
+        r'//*[name()="svg"][@aria-label="Navigate to the next curriculum item"]'
+    )
 
 
 class MediaType(StrEnum):
@@ -363,9 +366,19 @@ class Automate:
             element = WebDriverWait(self.driver, 2).until(
                 EC.presence_of_element_located((By.XPATH, Element.GoToNextRightButton))
             )
+            logger.info("Next right button found.")
             return True, element
         except Exception:
-            return False, None
+            try:
+                temp_element = WebDriverWait(self.driver, 2).until(
+                    EC.presence_of_element_located((By.XPATH, Element.NextCurriculum))
+                )
+                element = temp_element.find_element(By.XPATH, "..")
+                logger.info("Next curriculum button found.")
+                return True, element
+            except Exception:
+                logger.error("Unable to find next button or next curriculum button.")
+        return False, None
 
     def is_buy_now_button_exist(self) -> tuple[bool, WebElement | None]:
         try:
