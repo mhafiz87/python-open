@@ -16,7 +16,7 @@ from logger import log_file_handler, logger
 from obs_client import ObsClient
 
 ROOT_OUTPUT_DIR = get_root_output_dir()
-FRAME_CHECK_INTERVAL = 30
+FRAME_CHECK_INTERVAL = 60 * 5
 IMAGE_1_NAME = Path(ROOT_OUTPUT_DIR / "debug_screenshot_1.png").as_posix()
 IMAGE_2_NAME = Path(ROOT_OUTPUT_DIR / "debug_screenshot_2.png").as_posix()
 frame_counter: int = 1
