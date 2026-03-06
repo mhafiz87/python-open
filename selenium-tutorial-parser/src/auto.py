@@ -67,6 +67,7 @@ class Element(StrEnum):
 class MediaType(StrEnum):
     VIDEO = "video"
     ARTICLE = "article"
+    QUIZ = "quiz"
     UNKNOWN = "unknown"
 
 
@@ -549,20 +550,20 @@ class Automate:
             logger.error("Unable to save text content.")
             logger.error(f"{type(error).__name__}: {error}")
 
-    def go_to_next_media(self) -> bool:
+    def go_to_next_media(self) -> int:
         right_button = self.is_next_right_button_exist()
         if right_button[0]:
             right_button[1].click()
             logger.info("Navigated to next media.")
             time.sleep(10)
-            return True
+            return 0
         else:
             if self.is_last_screen():
                 logger.info("Reached the last lesson screen. Stopping process.")
-                return False
+                return 1
             else:
                 logger.warning("Next button not found. Possibly reached the end.")
-                return False
+                return 2
 
     def send_spacebar(self) -> None:
         self.driver.find_element(By.TAG_NAME, "body").send_keys(Keys.SPACE)
