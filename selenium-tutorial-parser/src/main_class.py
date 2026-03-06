@@ -2,8 +2,9 @@
 # TODO: Save current media for if stuck in loading, auto reload current course then navigate to current media
 # TODO: Config; if `medias` 1st element is empty string, assume already in course page.
 # TODO: Config; if `medias` element is not empty string, load course name, then navigate to media
-# TODO: reload page if failed to play for more than 5 times
-# TODO: reload page if page load for too long
+# TODO: handle if video took too long to load
+# TODO: Wait for play button to appear after lecture page loads
+# TODO: After saving caption, check if it's valid. If has `thumb-sprites`, not valid, retry again
 import threading
 import time
 from datetime import datetime
