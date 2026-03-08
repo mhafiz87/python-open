@@ -3,8 +3,10 @@
 # TODO: Config; if `medias` 1st element is empty string, assume already in course page.
 # TODO: Config; if `medias` element is not empty string, load course name, then navigate to media
 # TODO: handle if video took too long to load
-# TODO: Wait for play button to appear after lecture page loads
+# TODO: Wait for play button to appear after lecture page loads, in fail reload page
 # TODO: After saving caption, check if it's valid. If has `thumb-sprites`, not valid, retry again
+# TODO: Make a table of database to store progress an/or issues
+
 import threading
 import time
 from datetime import datetime
@@ -58,7 +60,6 @@ def check_frame_freeze(obs: ObsClient, check_time: float, media: str) -> bool:
         return False
     return True
 
-
 def check_time(obs: ObsClient, automate: Automate, new_media: bool, media: str) -> bool:
     obs.get_obs_screenshot(IMAGE_2_NAME)
     current_time, duration = automate.show_time_position(clear_line=not new_media)
@@ -69,6 +70,58 @@ def check_time(obs: ObsClient, automate: Automate, new_media: bool, media: str) 
         logger.warning(f"Stopping media: {media}")
         return False
     return True
+
+def reload_current_page() -> None:
+    logger.error("Unable to play the video.")
+    logger.info("Reloading current page...")
+    url = automate.driver.current_url.split("lecture")[0]
+    automate.driver.get(url)
+    time.sleep(15)
+
+
+def record_video_content(automate: Automate, section: str, lecture: str) -> int:
+    automate.get_caption(
+        filename=Path(ROOT_OUTPUT_DIR / section / f"{lecture}.vtt").as_posix()
+    )
+    # automate.download_resources(section, lecture)
+    if not automate.is_fullscreen():
+        automate.toggle_fullscreen()
+    for _ in range(5):
+        if automate.is_media_paused():
+            automate.send_spacebar()
+        else:
+            break
+        time.sleep(1)
+    else:
+        reload_current_page()
+        return 1
+        # raise Exception("Unable to play the video.")
+    for _ in range(5):
+        if automate.is_ui_visible():
+            automate.make_video_ui_invisible()
+        else:
+            break
+    else:
+        reload_current_page()
+        return 2
+        # raise Exception("Unable to hide the video UI.")
+    automate.restart_media()
+    obs.start_record()
+    obs.get_obs_screenshot(IMAGE_2_NAME)
+    frame_check_time: float = time.monotonic()
+    new_media = True
+    while True:
+        if automate.is_media_ended():
+            logger.info(f"Media ended: {section}/{lecture}")
+            break
+        if not check_frame_freeze(obs, frame_check_time, f"{section}/{lecture}"):
+            frame_check_time = time.monotonic()
+        if not check_time(obs, automate, new_media, f"{section}/{lecture}"):
+            break
+        new_media = False
+        time.sleep(1)
+    obs.stop_record()
+    return 0
 
 
 if __name__ == "__main__":
@@ -92,6 +145,7 @@ if __name__ == "__main__":
     while course_ended != 1:
         section = ""
         lecture = ""
+        # automate.driver.execute_script("window.scrollTo(0, 0);")
         while attempt < MAX_ATTEMPTS:
             current_url = automate.driver.current_url.split("#overview")[0]
             try:
@@ -120,60 +174,9 @@ if __name__ == "__main__":
                     output=Path(ROOT_OUTPUT_DIR / section / f"{lecture}.txt").as_posix()
                 )
             elif current_media_type == MediaType.VIDEO:
-                automate.get_caption(
-                    filename=Path(
-                        ROOT_OUTPUT_DIR / section / f"{lecture}.vtt"
-                    ).as_posix()
-                )
-                if not automate.is_fullscreen():
-                    automate.toggle_fullscreen()
-                for _ in range(5):
-                    if automate.is_media_paused():
-                        automate.send_spacebar()
-                    else:
-                        break
-                    time.sleep(1)
-                else:
-                    logger.error("Unable to play the video.")
-                    logger.info("Reloading current page...")
-                    url = automate.driver.current_url.split("lecture")[0]
-                    automate.driver.get(url)
-                    time.sleep(15)
+                if record_video_content(automate, section, lecture) > 0:
                     attempt += 1
                     continue
-                    # raise Exception("Unable to play the video.")
-                for _ in range(5):
-                    if automate.is_ui_visible():
-                        automate.make_video_ui_invisible()
-                    else:
-                        break
-                else:
-                    logger.error("Unable to hide the video UI.")
-                    logger.info("Reloading current page...")
-                    url = automate.driver.current_url.split("lecture")[0]
-                    automate.driver.get(url)
-                    time.sleep(15)
-                    attempt += 1
-                    continue
-                    # raise Exception("Unable to hide the video UI.")
-                automate.restart_media()
-                obs.start_record()
-                obs.get_obs_screenshot(IMAGE_2_NAME)
-                frame_check_time: float = time.monotonic()
-                new_media = True
-                while True:
-                    if automate.is_media_ended():
-                        logger.info(f"Media ended: {section}/{lecture}")
-                        break
-                    if not check_frame_freeze(
-                        obs, frame_check_time, f"{section}/{lecture}"
-                    ):
-                        frame_check_time = time.monotonic()
-                    if not check_time(obs, automate, new_media, f"{section}/{lecture}"):
-                        break
-                    new_media = False
-                    time.sleep(1)
-                obs.stop_record()
             course_ended = automate.go_to_next_media()
             if course_ended > 0:
                 break

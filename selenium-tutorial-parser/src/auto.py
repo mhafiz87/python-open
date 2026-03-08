@@ -1,5 +1,7 @@
 # ruff: noqa: F401
+import glob
 import json
+import os
 import re
 import time
 import traceback
@@ -9,6 +11,7 @@ from pathlib import Path
 import PyChromeDevTools
 from rapidfuzz import fuzz, process
 from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.webdriver import WebDriver
@@ -62,6 +65,7 @@ class Element(StrEnum):
     NextCurriculum = (
         r'//*[name()="svg"][@aria-label="Navigate to the next curriculum item"]'
     )
+    Resources = r'//a[@class="ud-btn ud-btn-medium ud-btn-ghost ud-text-sm resource--resource--ZGyBg ud-block-list-item ud-block-list-item-small ud-block-list-item-link"]'
 
 
 class MediaType(StrEnum):
@@ -80,6 +84,14 @@ class Automate:
         # options.add_argument("--remote-debugging-port=9222")
         # options.add_argument("user-data-dir=C:\\selenium\\ChromeProfile")
         options.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
+        options.add_experimental_option(
+            "prefs",
+            {
+                "download.default_directory": str(get_root_output_dir()),
+                "download.prompt_for_download": False,
+                "download.directory_upgrade": True,
+            },
+        )
         # options.add_experimental_option("detach", True)
         self.driver = webdriver.Chrome(options=options)
         logger.info(
@@ -231,6 +243,7 @@ class Automate:
             )
             for element in elements:
                 if "is-current" in element.get_attribute("class"):
+                    # print(element.text)
                     return element
             return None
         except Exception as error:
@@ -565,6 +578,66 @@ class Automate:
                 logger.warning("Next button not found. Possibly reached the end.")
                 return 2
 
+    def download_resources(self, section: str, lecture: str) -> None:
+        try:
+            for _ in range(3):
+                self.driver.execute_script("window.scrollTo(0, 0);")
+                current_lecture = self.get_current_lecture_element()
+                self.driver.execute_script(
+                    "arguments[0].scrollIntoView(true)", current_lecture
+                )
+                time.sleep(2.5)
+                resource_button = current_lecture.find_element(
+                    By.XPATH, ".//button[contains(@aria-label, 'Resource list')]"
+                )
+                if not resource_button:
+                    logger.info("This lecture has resource")
+                    return
+                resource_button.click()
+                time.sleep(2.5)
+                temp = self.get_current_lecture_element()
+                resources = temp.find_elements(By.XPATH, ".//a")
+                if not resources:
+                    logger.warning("Resources empty, retry again")
+                    url = self.driver.current_url.split("lecture")[0]
+                    self.driver.get(url)
+                    time.sleep(15)
+                    continue
+                print(resources)
+                resource_button.click()
+                break
+            else:
+                logger.warning("Unable to get resources.")
+                return
+            time.sleep(1)
+            for resource in resources:
+                if "cdn" in resource.get_attribute("href"):
+                    resource_button.click()
+                    self.driver.execute_script(
+                        "arguments[0].scrollIntoView(true)", resource
+                    )
+                    resource.click()
+                    time.sleep(2.5)
+                    logger.info(f"Downloaded {resource.get_attribute('download')}")
+                    files = glob.glob(str(get_root_output_dir()) + "/*")
+                    latest_file = max(files, key=os.path.getmtime)
+                    output = (
+                        get_root_output_dir()
+                        / f"{section}/{lecture.split(' - ')[0]} - {resource.get_attribute('download')}"
+                    )
+                    logger.info(f"Moving {latest_file} -> {output}")
+                    Path(latest_file).replace(output)
+            else:
+                pass
+                # logger.info("This lecture does not have any downloadable resources.")
+            # resource_button.click()
+        except NoSuchElementException as error:
+            logger.error(f"{type(error).__name__}")
+        except Exception as error:
+            traceback.print_exc()
+            logger.error(f"{type(error).__name__} : {error}")
+            logger.error("This lecture does not have any resources.")
+
     def send_spacebar(self) -> None:
         self.driver.find_element(By.TAG_NAME, "body").send_keys(Keys.SPACE)
 
@@ -630,15 +703,25 @@ class Automate:
 if __name__ == "__main__":
     automate = Automate()
     automate.attach_driver()
-    # automate.get_caption()
-    automate.is_media_ended()
-    # automate.driver.refresh()
-    # automate.go_to_next_media()
-    # automate.get_course_name()
-    # section, lecture = automate.get_current_media_info()
-    # print(lecture)
-    # automate.is_lecture_completed(lecture)
-    # automate.show_time_position()
-    # automate.get_current_media_type()
-    # automate.is_ui_visible()
-    # automate.get_caption()
+    temp = automate.get_current_lecture_element()
+    resource_button = temp.find_element(
+        By.XPATH, ".//button[contains(@aria-label, 'Resource list')]"
+    )
+    print(resource_button.tag_name)
+    print(resource_button.text)
+    resource_button.click()
+    time.sleep(2.5)
+    for _ in range(5):
+        temp = automate.driver.find_element(
+            By.XPATH,
+            r'//body[@id = "udemy"]',
+        )
+        temp1 = temp.find_elements(By.XPATH, r".//a")
+        print(len(temp1))
+        for link in temp1:
+            print(link.get_attribute("href"))
+        if len(temp1) > 0:
+            break
+        time.sleep(1)
+    else:
+        print("Unable to find href")

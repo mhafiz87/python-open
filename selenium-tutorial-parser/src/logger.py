@@ -69,7 +69,7 @@ log_stream_handler = logging.StreamHandler()
 log_stream_handler.setLevel(logging.DEBUG)
 log_stream_handler.setFormatter(
     StreamFormatter(
-        fmt="%(asctime)s - %(module)s - %(levelname)s - %(message)s",
+        fmt="%(asctime)s - %(module)s:%(lineno)d - %(levelname)s - %(message)s",
         # datefmt="%Y%m%d_%H:%M:%S",
     )
 )
@@ -82,7 +82,7 @@ log_file_handler = CustomFileHandler(
 log_file_handler.setLevel(logging.DEBUG)
 log_file_handler.setFormatter(
     FileFormatter(
-        fmt="%(asctime)s - %(module)s - %(levelname)s - %(message)s",
+        fmt="%(asctime)s - %(module)s:%(lineno)d - %(levelname)s - %(message)s",
         # datefmt="%Y%m%d_%H%M%S",
     )
 )
