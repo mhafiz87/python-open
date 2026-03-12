@@ -16,7 +16,7 @@ import numpy as np
 from PIL import Image
 
 from auto import Automate, MediaType
-from config import get_root_output_dir
+from config import get_medias, get_root_output_dir
 from logger import log_file_handler, logger
 from obs_client import ObsClient
 
@@ -60,6 +60,7 @@ def check_frame_freeze(obs: ObsClient, check_time: float, media: str) -> bool:
         return False
     return True
 
+
 def check_time(obs: ObsClient, automate: Automate, new_media: bool, media: str) -> bool:
     obs.get_obs_screenshot(IMAGE_2_NAME)
     current_time, duration = automate.show_time_position(clear_line=not new_media)
@@ -70,6 +71,7 @@ def check_time(obs: ObsClient, automate: Automate, new_media: bool, media: str) 
         logger.warning(f"Stopping media: {media}")
         return False
     return True
+
 
 def reload_current_page() -> None:
     logger.error("Unable to play the video.")
@@ -124,20 +126,8 @@ def record_video_content(automate: Automate, section: str, lecture: str) -> int:
     return 0
 
 
-if __name__ == "__main__":
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    log_file_handler.write_header(f"Web Parser: Start At {timestamp}")
-    automate = Automate()
-    obs = ObsClient()
-    obs.connect()
-    # There's a possibility that course name is too long and causes OBS
-    # recording error, so set output dir to root dir first, then manually copy
-    # and paste to course dir after recording is done
-    obs.create_output_dir(ROOT_OUTPUT_DIR.as_posix())
-    obs.set_output_dir(ROOT_OUTPUT_DIR.as_posix())
-
-    automate.attach_driver()
-    # TODO: [ ] open url in config, handle go to course page and open first section
+def record_course_content(automate: Automate, obs: ObsClient) -> None:
+    global course_ended
     course_name = automate.get_course_name()
     (ROOT_OUTPUT_DIR / course_name).mkdir(parents=True, exist_ok=True)
     automate.open_all_sections()
@@ -187,3 +177,48 @@ if __name__ == "__main__":
             )
             logger.warning("Stopping process.")
             exit(1)
+    logger.info(f"Course {course_name} ended.")
+
+
+if __name__ == "__main__":
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    log_file_handler.write_header(f"Web Parser: Start At {timestamp}")
+    automate = Automate()
+    obs = ObsClient()
+    obs.connect()
+    # There's a possibility that course name is too long and causes OBS
+    # recording error, so set output dir to root dir first, then manually copy
+    # and paste to course dir after recording is done
+    obs.create_output_dir(ROOT_OUTPUT_DIR.as_posix())
+    obs.set_output_dir(ROOT_OUTPUT_DIR.as_posix())
+
+    automate.attach_driver()
+    # TODO: [ ] open url in config, handle go to course page and open first section
+    courses = get_medias()
+    logger.info(f"{courses}")
+    for index, course in enumerate(courses):
+        logger.info(f"Processing {course}...")
+        if index > 0 and not course:
+            logger.warning(
+                "Config Error: `medias` should only have one empty string, and"
+                " it's the first element. Continue next element."
+            )
+            continue
+        elif course:
+            automate.driver.get(course)
+            course_button_exists, course_button = automate.is_buy_now_button_exist()
+            if course_button_exists:
+                course_button.click()
+                time.sleep(30)  # Wait for navigation to course page
+        record_course_content(automate, obs)
+        if index < len(courses) - 1:
+            course_ended = 0
+        else:
+            course_ended = 1
+    else:
+        logger.info("Done...")
+
+    automate.driver.quit()
+    obs.obs_client.disconnect()
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    log_file_handler.write_header(f"Web Parser: End At {timestamp}")
