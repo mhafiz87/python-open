@@ -48,6 +48,7 @@ class Element(StrEnum):
     DontAskButton = r'//button[@data-purpose = "dont-ask-button"]'
     PauseButton = r'//button[@data-purpose = "pause-button"]'
     PlayButton = r'//button[@data-purpose = "play-button"]'
+    PlayButtonInitial = r'//button[@data-purpose = "video-play-button-initial"]'
     CancelButton = r'//button[@data-purpose = "cancel-button"]'
     GoToNextButton = r'//div[@data-purpose = "go-to-next-button"]'
     GoToNextRightButton = r'//div[@data-purpose = "go-to-next"]'
@@ -643,7 +644,14 @@ class Automate:
 
     def get_caption(self, filename: str) -> None:
         self.driver.refresh()
-        time.sleep(10)  # import time
+        time.sleep(5)
+        try:
+            WebDriverWait(self.driver, 5).until(
+                EC.element_to_be_clickable((By.XPATH, Element.PlayButtonInitial))
+            )
+            logger.info("Found initial play button.")
+        except Exception:
+            pass
         messages = self.chromePCD.pop_messages()
 
         for m in messages:
