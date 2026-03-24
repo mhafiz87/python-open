@@ -53,11 +53,11 @@ class Element(StrEnum):
     GoToNextButton = r'//div[@data-purpose = "go-to-next-button"]'
     GoToNextRightButton = r'//div[@data-purpose = "go-to-next"]'
     RewindButton = r'//button[@data-purpose = "rewind-skip-button"]'
-    VideoClass = r'//video[@class = "video-player--video-player--HiAnq"]'
-    FullscreenButton = r'//button[@class = "ud-btn ud-btn-small ud-btn-ghost ud-btn-text-sm control-bar-dropdown--trigger--FnmP- control-bar-dropdown--trigger-dark--ZK26r control-bar-dropdown--trigger-small--ogRJ4 "]'
-    FullscreenSVG = (
-        r"//*[name()='svg'][@aria-label='Fullscreen' or @aria-label='Exit fullscreen']"
-    )
+    # VideoClass = r'//video[@class = "video-player--video-player--HiAnq"]'
+    VideoClass = r'//video[contains(@class, "video-player-module")]'
+    # FullscreenButton = r'//button[@class = "ud-btn ud-btn-small ud-btn-ghost ud-btn-text-sm control-bar-dropdown--trigger--FnmP- control-bar-dropdown--trigger-dark--ZK26r control-bar-dropdown--trigger-small--ogRJ4 "]'
+    FullscreenButton = r'//button[@data-purpose = "fullscreen-toggle"]'
+    FullscreenSVG = r"//*[name()='svg'][@aria-label='Fullscreen' or @aria-label='Exit fullscreen' or @aria-label='Enter fullscreen']"
     TextViewerClass = (
         r'//div[@data-purpose = "safely-set-inner-html:rich-text-viewer:html"]'
     )
@@ -65,6 +65,11 @@ class Element(StrEnum):
     ProgressBar = r'//div[@data-purpose="video-progress-buffer"]'
     NextCurriculum = (
         r'//*[name()="svg"][@aria-label="Navigate to the next curriculum item"]'
+    )
+    NextCont = r'//div[contains(@class, "next-and-previous--next")]'
+    PrevCont = r'//div[contains(@class, "next-and-previous--previous")]'
+    UserInactivity = (
+        r'//div[contains(@class, "user-activity-module--hide-when-user-inactive")]'
     )
     Resources = r'//a[@class="ud-btn ud-btn-medium ud-btn-ghost ud-text-sm resource--resource--ZGyBg ud-block-list-item ud-block-list-item-small ud-block-list-item-link"]'
 
@@ -349,7 +354,7 @@ class Automate:
 
     def is_fullscreen(self) -> bool:
         try:
-            element = WebDriverWait(self.driver, 2).until(
+            element = WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.XPATH, Element.FullscreenSVG))
             )
             aria_label = element.get_attribute("aria-label")
@@ -472,7 +477,7 @@ class Automate:
             return False
 
     def make_video_ui_invisible(self) -> None:
-        video_element = WebDriverWait(self.driver, 2).until(
+        video_element = WebDriverWait(self.driver, 10).until(
             EC.presence_of_element_located((By.XPATH, Element.VideoClass))
         )
         logger.info("Moving mouse to make video UI invisible...")
@@ -641,6 +646,46 @@ class Automate:
 
     def send_spacebar(self) -> None:
         self.driver.find_element(By.TAG_NAME, "body").send_keys(Keys.SPACE)
+
+    def send_f(self) -> None:
+        self.driver.find_element(By.TAG_NAME, "body").send_keys("f")
+
+    def hide_next_prev_cont(self) -> None:
+        try:
+            next = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, Element.NextCont))
+            )
+            prev = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, Element.PrevCont))
+            )
+            self.driver.execute_script(
+                "arguments[0].style.visibility = 'hidden';", next
+            )
+            self.driver.execute_script(
+                "arguments[0].style.visibility = 'hidden';", prev
+            )
+        except Exception:
+            pass
+
+    def toggle_hide_inactivity(self, hide: bool) -> None:
+        try:
+            inactivities = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_all_elements_located((By.XPATH, Element.UserInactivity))
+            )
+            if hide:
+                for inactivity in inactivities:
+                    self.driver.execute_script(
+                        "arguments[0].style.visibility = 'hidden';", inactivity
+                    )
+                    time.sleep(0.5)
+            else:
+                for inactivity in inactivities:
+                    self.driver.execute_script(
+                        "arguments[0].style.visibility = 'visible';", inactivity
+                    )
+                    time.sleep(0.5)
+        except Exception:
+            pass
 
     def get_caption(self, filename: str) -> None:
         self.driver.refresh()

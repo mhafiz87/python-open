@@ -86,18 +86,26 @@ def record_video_content(automate: Automate, section: str, lecture: str) -> int:
         filename=Path(ROOT_OUTPUT_DIR / section / f"{lecture}.vtt").as_posix()
     )
     # automate.download_resources(section, lecture)
-    if not automate.is_fullscreen():
-        automate.toggle_fullscreen()
-    for _ in range(5):
-        if automate.is_media_paused():
-            automate.send_spacebar()
-        else:
-            break
-        time.sleep(1)
-    else:
-        reload_current_page()
-        return 1
-        # raise Exception("Unable to play the video.")
+
+    # --- TEMP ---
+    # if not automate.is_fullscreen():
+    #     automate.toggle_fullscreen()
+    # for _ in range(5):
+    #     if automate.is_media_paused():
+    #         automate.send_spacebar()
+    #     else:
+    #         break
+    #     time.sleep(1)
+    # else:
+    #     reload_current_page()
+    #     return 1
+    #     # raise Exception("Unable to play the video.")
+
+    automate.send_f()
+    time.sleep(3)
+    automate.send_spacebar()
+    time.sleep(3)
+
     for _ in range(5):
         if automate.is_ui_visible():
             automate.make_video_ui_invisible()
@@ -107,6 +115,9 @@ def record_video_content(automate: Automate, section: str, lecture: str) -> int:
         reload_current_page()
         return 2
         # raise Exception("Unable to hide the video UI.")
+
+    automate.toggle_hide_inactivity(True)
+
     automate.restart_media()
     obs.start_record()
     obs.get_obs_screenshot(IMAGE_2_NAME)
@@ -123,6 +134,9 @@ def record_video_content(automate: Automate, section: str, lecture: str) -> int:
         new_media = False
         time.sleep(1)
     obs.stop_record()
+
+    automate.toggle_hide_inactivity(False)
+
     return 0
 
 
