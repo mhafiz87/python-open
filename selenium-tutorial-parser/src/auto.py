@@ -54,7 +54,7 @@ class Element(StrEnum):
     GoToNextRightButton = r'//div[@data-purpose = "go-to-next"]'
     RewindButton = r'//button[@data-purpose = "rewind-skip-button"]'
     # VideoClass = r'//video[@class = "video-player--video-player--HiAnq"]'
-    VideoClass = r'//video[contains(@class, "video-player-module")]'
+    VideoClass = r'//video[contains(@class, "video-player")]'
     # FullscreenButton = r'//button[@class = "ud-btn ud-btn-small ud-btn-ghost ud-btn-text-sm control-bar-dropdown--trigger--FnmP- control-bar-dropdown--trigger-dark--ZK26r control-bar-dropdown--trigger-small--ogRJ4 "]'
     FullscreenButton = r'//button[@data-purpose = "fullscreen-toggle"]'
     FullscreenSVG = r"//*[name()='svg'][@aria-label='Fullscreen' or @aria-label='Exit fullscreen' or @aria-label='Enter fullscreen']"
@@ -533,12 +533,13 @@ class Automate:
 
     def restart_media(self) -> None:
         try:
-            element = WebDriverWait(self.driver, 0.5).until(
+            element = WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.XPATH, Element.VideoClass))
             )
             self.driver.execute_script("arguments[0].currentTime = 0;", element)
             logger.info("Media has been restarted to the beginning.")
         except Exception:
+            logger.error("Unable to find video element.")
             logger.error("Unable to restart media.")
 
     def save_text_content(self, output: str) -> None:

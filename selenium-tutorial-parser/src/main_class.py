@@ -87,7 +87,7 @@ def record_video_content(automate: Automate, section: str, lecture: str) -> int:
     )
     # automate.download_resources(section, lecture)
 
-    # --- TEMP ---
+    # ---TEMP---
     # if not automate.is_fullscreen():
     #     automate.toggle_fullscreen()
     # for _ in range(5):
