@@ -587,44 +587,39 @@ class Automate:
 
     def download_resources(self, section: str, lecture: str) -> None:
         try:
-            for _ in range(3):
-                self.driver.execute_script("window.scrollTo(0, 0);")
-                current_lecture = self.get_current_lecture_element()
-                self.driver.execute_script(
-                    "arguments[0].scrollIntoView(true)", current_lecture
-                )
-                time.sleep(2.5)
-                resource_button = current_lecture.find_element(
-                    By.XPATH, ".//button[contains(@aria-label, 'Resource list')]"
-                )
-                if not resource_button:
-                    logger.info("This lecture has resource")
-                    return
-                resource_button.click()
-                time.sleep(2.5)
-                temp = self.get_current_lecture_element()
-                resources = temp.find_elements(By.XPATH, ".//a")
-                if not resources:
-                    logger.warning("Resources empty, retry again")
-                    url = self.driver.current_url.split("lecture")[0]
-                    self.driver.get(url)
-                    time.sleep(15)
-                    continue
-                print(resources)
-                resource_button.click()
-                break
-            else:
+            self.driver.execute_script("window.scrollTo(0, 0);")
+            current_lecture = self.get_current_lecture_element()
+            self.driver.execute_script(
+                "arguments[0].scrollIntoView(true)", current_lecture
+            )
+            resource_button = current_lecture.find_element(
+                By.XPATH, ".//button[contains(@aria-label, 'Resource list')]"
+            )
+            if not resource_button:
+                logger.info("This lecture has no resource")
+                return
+            resource_button.click()
+            time.sleep(1)
+            sibling = resource_button.find_element(By.XPATH, "following-sibling::*")
+            resources = sibling.find_elements(By.XPATH, r".//*[@download]")
+            if not resources:
+                logger.warning("Resources empty")
                 logger.warning("Unable to get resources.")
                 return
-            time.sleep(1)
             for resource in resources:
+                print(resource.get_attribute("download"))
+                ActionChains(self.driver).move_to_element(resource).perform()
+                time.sleep(1)
+            sibling = resource_button.find_element(By.XPATH, "following-sibling::*")
+            resources = sibling.find_elements(By.XPATH, r".//*[@download]")
+            for resource in resources:
+                print(resource.get_attribute("href"))
                 if "cdn" in resource.get_attribute("href"):
-                    resource_button.click()
                     self.driver.execute_script(
                         "arguments[0].scrollIntoView(true)", resource
                     )
                     resource.click()
-                    time.sleep(2.5)
+                    time.sleep(1)
                     logger.info(f"Downloaded {resource.get_attribute('download')}")
                     files = glob.glob(str(get_root_output_dir()) + "/*")
                     latest_file = max(files, key=os.path.getmtime)
@@ -634,8 +629,10 @@ class Automate:
                     )
                     logger.info(f"Moving {latest_file} -> {output}")
                     Path(latest_file).replace(output)
+                    resource_button.click()
             else:
-                pass
+                resource_button.click()
+                # pass
                 # logger.info("This lecture does not have any downloadable resources.")
             # resource_button.click()
         except NoSuchElementException as error:
@@ -754,6 +751,7 @@ class Automate:
         else:
             return f"{hours:02d}:{minutes:02d}:{int(remaining_seconds):02d}"
 
+
 if __name__ == "__main__":
     automate = Automate()
     automate.attach_driver()
@@ -764,11 +762,21 @@ if __name__ == "__main__":
     print(resource_button.tag_name)
     print(resource_button.text)
     resource_button.click()
-    time.sleep(2.5)
+    time.sleep(1)
+    sibling = resource_button.find_element(By.XPATH, "following-sibling::*")
+    elements = sibling.find_elements(By.XPATH, r".//*[@download]")
+    for element in elements:
+        print(element.get_attribute("download"))
+        ActionChains(automate.driver).move_to_element(element).perform()
+    exit(0)
     for _ in range(5):
-        temp = automate.driver.find_element(
-            By.XPATH,
-            r'//body[@id = "udemy"]',
+        # temp = resource_button.find_element(By.XPATH, "./..")
+        temp = automate.get_current_lecture_element()
+        resource_button = temp.find_element(
+            By.XPATH, ".//button[contains(@aria-label, 'Resource list')]"
+        )
+        temp = automate.driver.execute_script(
+            "return arguments[0].nextElementSibling", resource_button
         )
         temp1 = temp.find_elements(By.XPATH, r".//a")
         print(len(temp1))

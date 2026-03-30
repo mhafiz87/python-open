@@ -85,7 +85,7 @@ def record_video_content(automate: Automate, section: str, lecture: str) -> int:
     automate.get_caption(
         filename=Path(ROOT_OUTPUT_DIR / section / f"{lecture}.vtt").as_posix()
     )
-    # automate.download_resources(section, lecture)
+    automate.download_resources(section, lecture)
 
     # ---TEMP---
     # if not automate.is_fullscreen():
@@ -149,7 +149,7 @@ def record_course_content(automate: Automate, obs: ObsClient) -> None:
     while course_ended != 1:
         section = ""
         lecture = ""
-        # automate.driver.execute_script("window.scrollTo(0, 0);")
+        automate.driver.execute_script("window.scrollTo(0, 0);")
         while attempt < MAX_ATTEMPTS:
             current_url = automate.driver.current_url.split("#overview")[0]
             try:
