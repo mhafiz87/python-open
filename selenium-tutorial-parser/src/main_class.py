@@ -86,6 +86,7 @@ def record_video_content(automate: Automate, section: str, lecture: str) -> int:
         filename=Path(ROOT_OUTPUT_DIR / section / f"{lecture}.vtt").as_posix()
     )
     automate.download_resources(section, lecture)
+    # return 0
 
     # ---TEMP---
     # if not automate.is_fullscreen():
@@ -208,6 +209,7 @@ if __name__ == "__main__":
 
     automate.attach_driver()
     # TODO: [ ] open url in config, handle go to course page and open first section
+    reload_current_page()
     courses = get_medias()
     logger.info(f"{courses}")
     for index, course in enumerate(courses):
