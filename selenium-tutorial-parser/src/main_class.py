@@ -23,7 +23,7 @@ from obs_client import ObsClient
 MAX_ATTEMPTS = 5
 course_ended = 0
 ROOT_OUTPUT_DIR = get_root_output_dir()
-FRAME_CHECK_INTERVAL = 60 * 5
+FRAME_CHECK_INTERVAL = 60 * 10
 IMAGE_1_NAME = Path(ROOT_OUTPUT_DIR / "debug_screenshot_1.png").as_posix()
 IMAGE_2_NAME = Path(ROOT_OUTPUT_DIR / "debug_screenshot_2.png").as_posix()
 frame_counter: int = 1
@@ -78,7 +78,7 @@ def reload_current_page() -> None:
     logger.info("Reloading current page...")
     url = automate.driver.current_url.split("lecture")[0]
     automate.driver.get(url)
-    time.sleep(15)
+    time.sleep(7)
 
 
 def record_video_content(automate: Automate, section: str, lecture: str) -> int:
@@ -86,7 +86,6 @@ def record_video_content(automate: Automate, section: str, lecture: str) -> int:
         filename=Path(ROOT_OUTPUT_DIR / section / f"{lecture}.vtt").as_posix()
     )
     automate.download_resources(section, lecture)
-    # return 0
 
     # ---TEMP---
     # if not automate.is_fullscreen():
