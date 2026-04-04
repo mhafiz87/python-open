@@ -9,6 +9,7 @@ from enum import StrEnum
 from pathlib import Path
 
 import PyChromeDevTools
+import requests
 from rapidfuzz import fuzz, process
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
@@ -98,6 +99,7 @@ class Automate:
                 "download.directory_upgrade": True,
             },
         )
+        options.set_capability("goog:loggingPrefs", {"performance": "ALL"})
         # options.add_experimental_option("detach", True)
         self.driver = webdriver.Chrome(options=options)
         logger.info(
@@ -686,7 +688,47 @@ class Automate:
             pass
 
     def get_caption(self, filename: str) -> None:
+        url = ""
+        self.driver.execute_cdp_cmd("Network.enable", {})
+
+        def capture_requests(logs):
+            for log in logs:
+                message = log["message"]
+                if "Network.responseReceived" in message:
+                    if "vtt" in message:
+                        data = json.loads(message)
+                        try:
+                            capture_url = data["message"]["params"]["response"]["url"]
+                            if "vtt-cdn" in capture_url:
+                                # print(json.dumps(data, indent=2))
+                                url = capture_url
+                                logger.debug(url)
+                                # get cookies from Selenium
+                                cookies = self.driver.get_cookies()
+
+                                session = requests.Session()
+
+                                for cookie in cookies:
+                                    session.cookies.set(cookie["name"], cookie["value"])
+
+                                headers = {
+                                    "User-Agent": "Mozilla/5.0",
+                                    "Referer": self.driver.current_url,
+                                }
+
+                                response = session.get(url, headers=headers)
+
+                                with open(filename, "wb") as f:
+                                    f.write(response.content)
+                                    logger.info(f"Saved caption to {filename}")
+                                # with open(filename, "w", encoding="utf-8") as f:
+                                #     f.write(body_response[0].get("result", {}).get("body", ""))
+                                #     logger.info(f"Saved caption to {filename}")
+                        except Exception as error:
+                            print(f"{type(error)}: No 'url' in response")
+
         self.driver.refresh()
+
         time.sleep(5)
         try:
             WebDriverWait(self.driver, 5).until(
@@ -695,36 +737,40 @@ class Automate:
             logger.info("Found initial play button.")
         except Exception:
             pass
-        messages = self.chromePCD.pop_messages()
+        # messages = self.chromePCD.pop_messages()
 
-        for m in messages:
-            # print(m)
-            if "method" in m and m["method"] == "Network.responseReceived":
-                try:
-                    url = m["params"]["response"]["url"]
-                    if ".vtt" in url:
-                        # print(f"{m['params']['requestId']}")
-                        requestId = m["params"]["requestId"]
-                        body_response = self.chromePCD.Network.getResponseBody(
-                            requestId=requestId
-                        )
-                        # print(body_response[0].get("result", {}).get("body", ""))
-                        if body_response[0] is None:
-                            logger.warning(
-                                "Received empty response body for caption request."
-                            )
-                            continue
-                        with open(filename, "w", encoding="utf-8") as f:
-                            f.write(body_response[0].get("result", {}).get("body", ""))
-                            logger.info(f"Saved caption to {filename}")
-                        break
-                except Exception as error:
-                    logger.error(
-                        f"Error while processing network response: {type(error).__name__}: {error}"
-                    )
-                    traceback.print_exc()
-        else:
-            logger.warning("Unable to find subtitle file in network responses.")
+        logs = self.driver.get_log("performance")
+        capture_requests(logs)
+
+        # for m in messages:
+        #     # print(m)
+        #     if "method" in m and m["method"] == "Network.responseReceived":
+        #         try:
+        #             url = m["params"]["response"]["url"]
+        #             logger.debug(url)
+        #             if "vtt" in url:
+        #                 # print(f"{m['params']['requestId']}")
+        #                 requestId = m["params"]["requestId"]
+        #                 body_response = self.chromePCD.Network.getResponseBody(
+        #                     requestId=requestId
+        #                 )
+        #                 # print(body_response[0].get("result", {}).get("body", ""))
+        #                 if body_response[0] is None:
+        #                     logger.warning(
+        #                         "Received empty response body for caption request."
+        #                     )
+        #                     continue
+        #                 with open(filename, "w", encoding="utf-8") as f:
+        #                     f.write(body_response[0].get("result", {}).get("body", ""))
+        #                     logger.info(f"Saved caption to {filename}")
+        #                 break
+        #         except Exception as error:
+        #             logger.error(
+        #                 f"Error while processing network response: {type(error).__name__}: {error}"
+        #             )
+        #             traceback.print_exc()
+        # else:
+        #     logger.warning("Unable to find subtitle file in network responses.")
 
     @staticmethod
     def seconds_to_time(seconds, precision=2):

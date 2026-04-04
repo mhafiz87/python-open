@@ -85,6 +85,7 @@ def record_video_content(automate: Automate, section: str, lecture: str) -> int:
     automate.get_caption(
         filename=Path(ROOT_OUTPUT_DIR / section / f"{lecture}.vtt").as_posix()
     )
+    # exit(1)
     automate.download_resources(section, lecture)
 
     # ---TEMP---

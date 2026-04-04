@@ -22,6 +22,7 @@ dependencies = [
     "pychromedevtools>=1.0.4",
     "python-dotenv>=1.0.1",
     "rapidfuzz>=3.14.3",
+    "requests>=2.33.1",
     "selenium>=4.28.1",
 ]
 
