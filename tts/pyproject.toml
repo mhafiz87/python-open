@@ -1,0 +1,14 @@
+[project]
+name = "tts"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "edge-tts>=7.2.8",
+    "gtts>=2.5.4",
+    "piper-tts>=1.4.2",
+    "pyttsx3==2.91",
+    "sounddevice>=0.5.5",
+    "soundfile>=0.13.1",
+]
