@@ -385,14 +385,14 @@ class Automate:
 
     def is_next_right_button_exist(self) -> tuple[bool, WebElement | None]:
         try:
-            element = WebDriverWait(self.driver, 2).until(
+            element = WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.XPATH, Element.GoToNextRightButton))
             )
             logger.info("Next right button found.")
             return True, element
         except Exception:
             try:
-                temp_element = WebDriverWait(self.driver, 2).until(
+                temp_element = WebDriverWait(self.driver, 10).until(
                     EC.presence_of_element_located((By.XPATH, Element.NextCurriculum))
                 )
                 element = temp_element.find_element(By.XPATH, "..")
@@ -577,6 +577,15 @@ class Automate:
         if right_button[0]:
             right_button[1].click()
             logger.info("Navigated to next media.")
+            try:
+                element = WebDriverWait(self.driver, 1).until(
+                    EC.presence_of_element_located(
+                        (By.XPATH, r'//button[@data-testid = "submit-confirm-modal"]')
+                    )
+                )
+                element.click()
+            except Exception:
+                pass
             time.sleep(10)
             return 0
         else:
@@ -591,9 +600,9 @@ class Automate:
         try:
             self.driver.execute_script("window.scrollTo(0, 0);")
             current_lecture = self.get_current_lecture_element()
-            self.driver.execute_script(
-                "arguments[0].scrollIntoView(true)", current_lecture
-            )
+            # self.driver.execute_script(
+            #     "arguments[0].scrollIntoView(true)", current_lecture
+            # )
             resource_button = current_lecture.find_element(
                 By.XPATH, ".//button[contains(@aria-label, 'Resource list')]"
             )
@@ -638,7 +647,7 @@ class Automate:
                 # logger.info("This lecture does not have any downloadable resources.")
             # resource_button.click()
         except NoSuchElementException as error:
-            logger.error(f"{type(error).__name__}")
+            logger.error(f"{type(error).__name__} : {error}")
         except Exception as error:
             traceback.print_exc()
             logger.error(f"{type(error).__name__} : {error}")
@@ -688,7 +697,7 @@ class Automate:
             pass
 
     def get_caption(self, filename: str) -> None:
-        url = ""
+        # url = ""
         self.driver.execute_cdp_cmd("Network.enable", {})
 
         def capture_requests(logs):

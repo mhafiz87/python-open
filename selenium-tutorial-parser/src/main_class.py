@@ -23,7 +23,7 @@ from obs_client import ObsClient
 MAX_ATTEMPTS = 5
 course_ended = 0
 ROOT_OUTPUT_DIR = get_root_output_dir()
-FRAME_CHECK_INTERVAL = 60 * 10
+FRAME_CHECK_INTERVAL = 60 * 3
 IMAGE_1_NAME = Path(ROOT_OUTPUT_DIR / "debug_screenshot_1.png").as_posix()
 IMAGE_2_NAME = Path(ROOT_OUTPUT_DIR / "debug_screenshot_2.png").as_posix()
 frame_counter: int = 1
@@ -87,6 +87,7 @@ def record_video_content(automate: Automate, section: str, lecture: str) -> int:
     )
     # exit(1)
     automate.download_resources(section, lecture)
+    # return 0
 
     # ---TEMP---
     # if not automate.is_fullscreen():
@@ -145,7 +146,7 @@ def record_course_content(automate: Automate, obs: ObsClient) -> None:
     global course_ended
     course_name = automate.get_course_name()
     (ROOT_OUTPUT_DIR / course_name).mkdir(parents=True, exist_ok=True)
-    automate.open_all_sections()
+    # automate.open_all_sections()
     attempt = 0
     while course_ended != 1:
         section = ""
@@ -158,6 +159,9 @@ def record_course_content(automate: Automate, obs: ObsClient) -> None:
             except Exception as error:
                 logger.error(f"{type(error).__name__}")
                 logger.error("Unable to get current media info.")
+                status = automate.go_to_next_media()
+                if status == 0:
+                    continue
                 logger.info(f"Reloading current page: {current_url}")
                 automate.driver.get(current_url)
                 time.sleep(15)
@@ -179,6 +183,9 @@ def record_course_content(automate: Automate, obs: ObsClient) -> None:
                     output=Path(ROOT_OUTPUT_DIR / section / f"{lecture}.txt").as_posix()
                 )
             elif current_media_type == MediaType.VIDEO:
+                automate.driver.execute_script("window.scrollTo(0, 0);")
+                if automate.is_fullscreen():
+                    automate.toggle_fullscreen()
                 if record_video_content(automate, section, lecture) > 0:
                     attempt += 1
                     continue
