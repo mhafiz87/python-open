@@ -182,6 +182,7 @@ def record_course_content(automate: Automate, obs: ObsClient) -> None:
                 automate.save_text_content(
                     output=Path(ROOT_OUTPUT_DIR / section / f"{lecture}.txt").as_posix()
                 )
+                automate.download_resources(section, lecture)
             elif current_media_type == MediaType.VIDEO:
                 automate.driver.execute_script("window.scrollTo(0, 0);")
                 if automate.is_fullscreen():
