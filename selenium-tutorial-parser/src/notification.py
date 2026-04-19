@@ -5,6 +5,8 @@ from email.mime.text import MIMEText
 
 from dotenv import load_dotenv
 
+from logger import logger
+
 load_dotenv()
 
 print()
@@ -26,7 +28,7 @@ def send_email(subject, body, sender, recipients, password):
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp_server:
         smtp_server.login(sender, password)
         smtp_server.sendmail(sender, recipients, msg.as_string())
-    print("EMail sent!")
+    logger.info(f"Email sent to {', '.join(recipients)} with subject: {subject}")
 
 
 if __name__ == "__main__":

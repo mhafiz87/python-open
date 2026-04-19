@@ -7,6 +7,7 @@
 # TODO: After saving caption, check if it's valid. If has `thumb-sprites`, not valid, retry again
 # TODO: Make a table of database to store progress an/or issues
 
+import os
 import threading
 import time
 from datetime import datetime
@@ -14,10 +15,12 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image
+from websocket import send
 
 from auto import Automate, MediaType
 from config import get_medias, get_root_output_dir
 from logger import log_file_handler, logger
+from notification import send_email
 from obs_client import ObsClient
 
 MAX_ATTEMPTS = 5
@@ -56,6 +59,13 @@ def check_frame_freeze(obs: ObsClient, check_time: float, media: str) -> bool:
     frame_check_time = time.monotonic()
     if frame_check_time - check_time >= FRAME_CHECK_INTERVAL:
         if handle_frame_freeze(obs, media):
+            send_email(
+                subject="Tutorial Recording Completed",
+                body="The tutorial recording process has stopped due to freeze frame.",
+                sender="mhafiz87.engineer@gmail.com",
+                recipients=["mhafiz.muhamad@gmail.com"],
+                password=os.getenv("GSPD"),
+            )
             exit(1)
         return False
     return True
@@ -241,6 +251,13 @@ if __name__ == "__main__":
             course_ended = 1
     else:
         logger.info("Done...")
+        send_email(
+            subject="Tutorial Recording Completed",
+            body="The tutorial recording process has been completed ended.",
+            sender="mhafiz87.engineer@gmail.com",
+            recipients=["mhafiz.muhamad@gmail.com"],
+            password=os.getenv("GSPD"),
+        )
 
     automate.driver.quit()
     obs.obs_client.disconnect()
