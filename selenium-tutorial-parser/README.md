@@ -19,6 +19,7 @@
    ```
 
 3. Login into website and go into the target url.
+4. Go to settings > privacy and security > security > safe browsing > no protection (not recommended) to disable safe browsing. This is required to allow Selenium to interact with the browser.
 
 ## OBS Setup
 
