@@ -60,7 +60,7 @@ uv tool install git-cliff@latest --python 3.13.11
 uv tool install yamlfix@latest --python 3.13.11
 uv tool install refurb@latest --python 3.13.11
 uv tool install shellcheck-py@latest --python 3.13.11
-uv tool install --with mdformat-gfm mdformat --python 3.13.11
+uv tool install --with mdformat-gfm,mdformat-obsidian mdformat --python 3.13.11
 uv tool install pynvim@latest --python 3.13.11
 ```
 
